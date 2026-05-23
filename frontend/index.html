@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GiveFund</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #FAFAFA;
+      --card: #FFFFFF;
+      --text: #1A1A1A;
+      --muted: #6B6B6B;
+      --border: #EEEEEE;
+      --cta: #E8533A;
+      --cta-hover: #D44530;
+      --green: #22C55E;
+      --amber: #F59E0B;
+      --red: #EF4444;
+      --bar-bg: #F0F0F0;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    .site-shell {
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #FFF4EF 0%, #FAFAFA 58%, #F1FAF6 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 64px 24px 42px;
+    }
+
+    .hero-inner,
+    .main {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+    }
+
+    .hero-copy {
+      max-width: 760px;
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(42px, 8vw, 76px);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .hero p {
+      max-width: 650px;
+      margin: 0 0 28px;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .search-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 220px;
+      gap: 14px;
+      max-width: 840px;
+    }
+
+    .search-input,
+    .sort-select {
+      width: 100%;
+      min-height: 52px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--card);
+      color: var(--text);
+      outline: none;
+      box-shadow: var(--shadow);
+    }
+
+    .search-input {
+      padding: 0 18px;
+      font-size: 16px;
+    }
+
+    .sort-select {
+      padding: 0 14px;
+      cursor: pointer;
+    }
+
+    .search-input:focus,
+    .sort-select:focus,
+    .pill:focus-visible,
+    .give-button:focus-visible,
+    .card-button:focus-visible,
+    .back-link:focus-visible {
+      border-color: var(--cta);
+      box-shadow: 0 0 0 4px rgba(232, 83, 58, 0.16);
+      outline: none;
+    }
+
+    .main {
+      padding: 30px 24px 56px;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pill {
+      border: 0;
+      border-radius: 999px;
+      background: #F0F0F0;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 14px;
+      min-height: 38px;
+      padding: 8px 16px;
+    }
+
+    .pill[aria-pressed="true"] {
+      background: var(--text);
+      color: var(--card);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+      min-height: 21px;
+      text-align: right;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .campaign-card {
+      display: flex;
+      min-width: 0;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .photo-wrap {
+      position: relative;
+      aspect-ratio: 16 / 9;
+      background: #F0F0F0;
+    }
+
+    .photo-wrap img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 10px;
+      text-transform: capitalize;
+    }
+
+    .card-body {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+    }
+
+    .card-button {
+      display: block;
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      padding: 0;
+      text-align: left;
+    }
+
+    .campaign-title {
+      display: -webkit-box;
+      min-height: 56px;
+      margin: 0;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      font-size: 19px;
+      line-height: 1.45;
+    }
+
+    .snippet {
+      display: -webkit-box;
+      min-height: 72px;
+      margin: 0;
+      overflow: hidden;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+      color: var(--muted);
+    }
+
+    .progress {
+      display: grid;
+      gap: 9px;
+    }
+
+    .progress-track {
+      overflow: hidden;
+      height: 8px;
+      border-radius: 4px;
+      background: var(--bar-bg);
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: inherit;
+    }
+
+    .amounts {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .amounts strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .give-button {
+      width: 100%;
+      min-height: 48px;
+      margin-top: auto;
+      border: 0;
+      border-radius: 8px;
+      background: var(--cta);
+      color: #FFFFFF;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 12px 20px;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .give-button:hover {
+      background: var(--cta-hover);
+    }
+
+    .detail {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 28px;
+      align-items: start;
+    }
+
+    .detail-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+
+    .detail-content {
+      padding: 24px;
+    }
+
+    .detail h2 {
+      margin: 0 0 14px;
+      font-size: clamp(28px, 5vw, 44px);
+      line-height: 1.08;
+    }
+
+    .detail p {
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 40px;
+      margin-bottom: 20px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      padding: 8px 16px;
+      text-decoration: none;
+    }
+
+    .empty {
+      border: 1px dashed #D6D6D6;
+      border-radius: 16px;
+      background: var(--card);
+      color: var(--muted);
+      padding: 36px;
+      text-align: center;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 920px) {
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .detail {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 48px 18px 32px;
+      }
+
+      .main {
+        padding: 24px 18px 44px;
+      }
+
+      .search-row,
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .status {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="site-shell">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <h1>GiveFund</h1>
+          <p>Find real people raising money for urgent medical, education, emergency, and community needs.</p>
+        </div>
+        <div class="search-row">
+          <input id="searchInput" class="search-input" type="search" placeholder="Search by name, need, or story" aria-label="Search campaigns">
+          <select id="sortSelect" class="sort-select" aria-label="Sort campaigns">
+            <option value="most_needed">Most Needed</option>
+            <option value="almost_there">Almost There</option>
+            <option value="newest">Newest</option>
+          </select>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section id="listView" aria-label="Campaign list">
+        <div class="toolbar">
+          <div class="pills" role="group" aria-label="Category filters">
+            <button class="pill" type="button" data-category="" aria-pressed="true">All</button>
+            <button class="pill" type="button" data-category="medical" aria-pressed="false">Medical</button>
+            <button class="pill" type="button" data-category="education" aria-pressed="false">Education</button>
+            <button class="pill" type="button" data-category="emergency" aria-pressed="false">Emergency</button>
+            <button class="pill" type="button" data-category="community" aria-pressed="false">Community</button>
+          </div>
+          <div id="statusText" class="status" aria-live="polite"></div>
+        </div>
+        <div id="campaignGrid" class="grid"></div>
+        <div id="emptyState" class="empty hidden">No campaigns match this search.</div>
+      </section>
+
+      <section id="detailView" class="hidden" aria-label="Campaign detail"></section>
+    </main>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:8000";
+
+    const mockResponse = {
+      campaigns: [
+        {
+          id: 1,
+          title: "Help Maria with cancer treatment",
+          story_snippet: "Maria is a single mother of two facing months of treatment and lost wages while her family covers care and transport.",
+          photo_url: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=900&q=80",
+          goal_amount: 10000.0,
+          raised_amount: 3200.0,
+          funding_gap: 6800.0,
+          pct_funded: 32.0,
+          platform: "gofundme",
+          campaign_url: "https://www.gofundme.com/",
+          category: "medical",
+          scraped_at: "2024-01-15T10:30:00"
+        },
+        {
+          id: 2,
+          title: "Tuition support for Jamal's nursing degree",
+          story_snippet: "Jamal has covered most of his program costs and needs help with the final semester before clinical placement begins.",
+          photo_url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80",
+          goal_amount: 6000.0,
+          raised_amount: 5100.0,
+          funding_gap: 900.0,
+          pct_funded: 85.0,
+          platform: "gofundme",
+          campaign_url: "https://www.gofundme.com/",
+          category: "education",
+          scraped_at: "2024-01-18T14:10:00"
+        },
+        {
+          id: 3,
+          title: "Emergency repairs after apartment fire",
+          story_snippet: "A small apartment building fire displaced three neighbors who need replacement essentials, deposits, and short-term housing.",
+          photo_url: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=900&q=80",
+          goal_amount: 18000.0,
+          raised_amount: 8100.0,
+          funding_gap: 9900.0,
+          pct_funded: 45.0,
+          platform: "gofundme",
+          campaign_url: "https://www.gofundme.com/",
+          category: "emergency",
+          scraped_at: "2024-01-20T09:45:00"
+        }
+      ],
+      total: 3,
+      page: 1,
+      pages: 1
+    };
+
+    const state = {
+      campaigns: [],
+      category: "",
+      search: "",
+      sortBy: "most_needed",
+      usingMockData: false
+    };
+
+    const elements = {
+      searchInput: document.querySelector("#searchInput"),
+      sortSelect: document.querySelector("#sortSelect"),
+      pills: document.querySelectorAll(".pill"),
+      campaignGrid: document.querySelector("#campaignGrid"),
+      emptyState: document.querySelector("#emptyState"),
+      statusText: document.querySelector("#statusText"),
+      listView: document.querySelector("#listView"),
+      detailView: document.querySelector("#detailView")
+    };
+
+    // Formats numeric amounts as whole-dollar currency labels.
+    function formatCurrency(amount) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0
+      }).format(amount || 0);
+    }
+
+    // Chooses the configured progress color based on percent funded.
+    function getProgressColor(percent) {
+      if (percent > 75) {
+        return "var(--green)";
+      }
+
+      if (percent > 40) {
+        return "var(--amber)";
+      }
+
+      return "var(--red)";
+    }
+
+    // Prevents user-entered text from being interpreted as markup.
+    function escapeHtml(value) {
+      return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // Builds a backend URL with only active query parameters.
+    function buildCampaignUrl() {
+      const url = new URL("/campaigns", API_URL);
+      url.searchParams.set("page", "1");
+      url.searchParams.set("page_size", "20");
+      url.searchParams.set("sort_by", state.sortBy);
+
+      if (state.search) {
+        url.searchParams.set("search", state.search);
+      }
+
+      if (state.category) {
+        url.searchParams.set("category", state.category);
+      }
+
+      return url;
+    }
+
+    // Fetches campaigns from the backend and falls back to local mock data.
+    async function fetchCampaigns() {
+      try {
+        const response = await fetch(buildCampaignUrl());
+
+        if (!response.ok) {
+          throw new Error(`Campaign API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+        state.campaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
+        state.usingMockData = false;
+      } catch (error) {
+        console.error("Using mock campaigns because the API request failed", error);
+        state.campaigns = applyLocalFilters(mockResponse.campaigns);
+        state.usingMockData = true;
+      }
+
+      renderCurrentRoute();
+    }
+
+    // Applies search, category, and sort locally for mock fallback data.
+    function applyLocalFilters(campaigns) {
+      const search = state.search.toLowerCase();
+      const filtered = campaigns.filter((campaign) => {
+        const matchesCategory = !state.category || campaign.category === state.category;
+        const text = `${campaign.title} ${campaign.story_snippet}`.toLowerCase();
+        const matchesSearch = !search || text.includes(search);
+        return matchesCategory && matchesSearch;
+      });
+
+      return [...filtered].sort((a, b) => {
+        if (state.sortBy === "almost_there") {
+          return b.pct_funded - a.pct_funded;
+        }
+
+        if (state.sortBy === "newest") {
+          return new Date(b.scraped_at) - new Date(a.scraped_at);
+        }
+
+        return b.funding_gap - a.funding_gap;
+      });
+    }
+
+    // Creates a delayed wrapper for input-driven campaign searches.
+    function debounce(callback, delay) {
+      let timerId;
+
+      return (...args) => {
+        window.clearTimeout(timerId);
+        timerId = window.setTimeout(() => callback(...args), delay);
+      };
+    }
+
+    // Renders one campaign card using the API response contract.
+    function renderCampaignCard(campaign) {
+      const pct = Math.max(0, Math.min(campaign.pct_funded || 0, 100));
+      const progressColor = getProgressColor(campaign.pct_funded || 0);
+
+      return `
+        <article class="campaign-card">
+          <div class="photo-wrap">
+            <img src="${escapeHtml(campaign.photo_url)}" alt="${escapeHtml(campaign.title)}" loading="lazy">
+            <span class="badge">${escapeHtml(campaign.platform)}</span>
+          </div>
+          <div class="card-body">
+            <button class="card-button" type="button" data-view-id="${campaign.id}" aria-label="View ${escapeHtml(campaign.title)}">
+              <h2 class="campaign-title">${escapeHtml(campaign.title)}</h2>
+              <p class="snippet">${escapeHtml(campaign.story_snippet)}</p>
+            </button>
+            <div class="progress" aria-label="${Math.round(campaign.pct_funded || 0)} percent funded">
+              <div class="progress-track">
+                <div class="progress-fill" style="width: ${pct}%; background: ${progressColor};"></div>
+              </div>
+              <div class="amounts">
+                <span><strong>${formatCurrency(campaign.raised_amount)}</strong> raised</span>
+                <span>${formatCurrency(campaign.goal_amount)} goal</span>
+              </div>
+            </div>
+            <a class="give-button" href="${escapeHtml(campaign.campaign_url)}" target="_blank" rel="noopener noreferrer">Give Now</a>
+          </div>
+        </article>
+      `;
+    }
+
+    // Renders the grid and empty state for the current campaign collection.
+    function renderList() {
+      elements.listView.classList.remove("hidden");
+      elements.detailView.classList.add("hidden");
+      elements.detailView.innerHTML = "";
+
+      elements.campaignGrid.innerHTML = state.campaigns.map(renderCampaignCard).join("");
+      elements.emptyState.classList.toggle("hidden", state.campaigns.length > 0);
+      elements.statusText.textContent = state.usingMockData
+        ? "Showing sample campaigns"
+        : `${state.campaigns.length} campaign${state.campaigns.length === 1 ? "" : "s"} found`;
+    }
+
+    // Renders the selected campaign route as an inline detail view.
+    function renderDetail(campaignId) {
+      const campaign = state.campaigns.find((item) => String(item.id) === String(campaignId));
+
+      if (!campaign) {
+        renderList();
+        return;
+      }
+
+      const pct = Math.max(0, Math.min(campaign.pct_funded || 0, 100));
+      const progressColor = getProgressColor(campaign.pct_funded || 0);
+
+      elements.listView.classList.add("hidden");
+      elements.detailView.classList.remove("hidden");
+      elements.detailView.innerHTML = `
+        <a class="back-link" href="#">Back to campaigns</a>
+        <div class="detail">
+          <div class="detail-card">
+            <div class="photo-wrap">
+              <img src="${escapeHtml(campaign.photo_url)}" alt="${escapeHtml(campaign.title)}">
+              <span class="badge">${escapeHtml(campaign.platform)}</span>
+            </div>
+          </div>
+          <div class="detail-card">
+            <div class="detail-content">
+              <h2>${escapeHtml(campaign.title)}</h2>
+              <p>${escapeHtml(campaign.story_snippet)}</p>
+              <div class="progress" aria-label="${Math.round(campaign.pct_funded || 0)} percent funded">
+                <div class="progress-track">
+                  <div class="progress-fill" style="width: ${pct}%; background: ${progressColor};"></div>
+                </div>
+                <div class="amounts">
+                  <span><strong>${formatCurrency(campaign.raised_amount)}</strong> raised</span>
+                  <span>${formatCurrency(campaign.funding_gap)} still needed</span>
+                </div>
+              </div>
+              <a class="give-button" href="${escapeHtml(campaign.campaign_url)}" target="_blank" rel="noopener noreferrer">Give Now</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Chooses the list or detail view from the current hash route.
+    function renderCurrentRoute() {
+      const detailMatch = window.location.hash.match(/^#\/campaign\/(.+)$/);
+
+      if (detailMatch) {
+        renderDetail(detailMatch[1]);
+        return;
+      }
+
+      renderList();
+    }
+
+    // Wires interactive controls to API refreshes and route changes.
+    function bindEvents() {
+      const debouncedFetch = debounce(fetchCampaigns, 400);
+
+      elements.searchInput.addEventListener("input", (event) => {
+        state.search = event.target.value.trim();
+        debouncedFetch();
+      });
+
+      elements.sortSelect.addEventListener("change", (event) => {
+        state.sortBy = event.target.value;
+        fetchCampaigns();
+      });
+
+      elements.pills.forEach((pill) => {
+        pill.addEventListener("click", () => {
+          state.category = pill.dataset.category;
+          elements.pills.forEach((item) => {
+            item.setAttribute("aria-pressed", String(item === pill));
+          });
+          fetchCampaigns();
+        });
+      });
+
+      elements.campaignGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-view-id]");
+
+        if (button) {
+          window.location.hash = `/campaign/${button.dataset.viewId}`;
+        }
+      });
+
+      window.addEventListener("hashchange", renderCurrentRoute);
+    }
+
+    bindEvents();
+    fetchCampaigns();
+  </script>
+</body>
+</html>
