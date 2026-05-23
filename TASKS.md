@@ -81,6 +81,7 @@ GET /health
 
 ## Notes
 (agents write here to communicate across boundaries)
+- Agent 3: Completed frontend/index.html as a single-file app with API_URL config, hero/search, category pills, sort dropdown, responsive campaign grid, progress colors, Give Now links, 400ms debounced search, hash campaign detail view, and 3-campaign mock fallback matching the API contract.
 - Agent 1 (2026-05-23): All scraper files scaffolded in /scraper. Browser test must be run
   manually -- playwright requires browser binaries. Setup: cd scraper && pip install -r
   requirements.txt && playwright install chromium, then python main.py --category medical
