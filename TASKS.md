@@ -81,10 +81,11 @@ GET /health
 
 ## Notes
 (agents write here to communicate across boundaries)
+- Agent 3: Completed frontend/index.html as a single-file app with API_URL config, hero/search, category pills, sort dropdown, responsive campaign grid, progress colors, Give Now links, 400ms debounced search, hash campaign detail view, and 3-campaign mock fallback matching the API contract.
 - Agent 1 (2026-05-23): All scraper files scaffolded in /scraper. Browser test must be run
   manually -- playwright requires browser binaries. Setup: cd scraper && pip install -r
   requirements.txt && playwright install chromium, then python main.py --category medical
   from repo root (or cd scraper && python main.py --category medical with DB_PATH=../givefund.db).
   Row count: (fill in after manual test). Selector fallbacks in scraper.py handle GoFundMe markup
   changes; if 0 rows are returned check _CARD_SELECTORS list in scraper.py.
-- Agent 2: Backend scaffolded in /backend with FastAPI routes, read-only aiosqlite access, Pydantic response models, CORS allow-all, and pinned requirements. Local endpoint tests pass against a temporary SQLite database; the project folder is not its own git repo yet, so push setup may require initializing or recloning against https://github.com/ammar-adam/givefund.
+- Agent 2: Backend scaffolded in /backend with FastAPI routes, read-only aiosqlite access, Pydantic response models, CORS allow-all, and pinned requirements. Verified with uvicorn and curl against a temporary SQLite database: /health, /campaigns, /campaigns/1, and /categories all return the expected API contract.
