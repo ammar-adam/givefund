@@ -41,7 +41,9 @@ flowchart LR
 
 For live scraping, install Chromium: `playwright install chromium`, then `python main.py --platform all` from `scraper/`.
 
-See **[HANDOFF.md](./HANDOFF.md)** for full commands, deployment, and next steps.
+See **[HANDOFF.md](./HANDOFF.md)** for local development and **[PRODUCTION.md](./PRODUCTION.md)** for Render + Netlify deployment.
+
+**Production sources (no public API):** GoFundMe via in-browser Algolia responses, LaunchGood via `/v4/campaign/` pages. Fundly’s explore URL currently redirects — scraper skips it until a listing URL exists.
 
 ## API
 

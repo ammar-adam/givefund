@@ -77,9 +77,13 @@ For live data, start the backend first. If the API is down, the page shows six b
 3. `GET /campaigns` returns campaigns with `funding_gap` and `pct_funded`
 4. Open `frontend/index.html` → cards load from API; **Give Now** opens `campaign_url` in a new tab
 
+## Production deploy
+
+See **[PRODUCTION.md](./PRODUCTION.md)** — Render (API + disk), Netlify (`GIVEFUND_API_URL`), GitHub Actions daily scrape.
+
 ## What to build next
 
-- Tune LaunchGood/Fundly selectors against live DOM; add retry/backoff for rate limits
+- Tune Fundly when a public listing URL exists; expand GoFundMe scroll depth for more than ~15 unique hits per run
 - CI: seed DB + pytest for backend contract tests
 - Host frontend on Netlify/Vercel; point `API_URL` at production API
 - Cron on Render/Railway for `scheduler.py` + scraper artifact upload to API disk
