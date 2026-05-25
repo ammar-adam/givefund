@@ -24,7 +24,9 @@ flowchart LR
 
 ## Deploy to production
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ammar-adam/givefund) — then Netlify with `GIVEFUND_API_URL`. Full steps in **[PRODUCTION.md](./PRODUCTION.md)**.
+**API:** [Deploy to Render](https://render.com/deploy?repo=https://github.com/ammar-adam/givefund)  
+**UI:** [Deploy to Vercel](https://vercel.com/new/clone?repository-url=https://github.com/ammar-adam/givefund) — set `GIVEFUND_API_URL` to your Render URL.  
+Full steps in **[PRODUCTION.md](./PRODUCTION.md)**.
 
 ## Quick start
 

@@ -8,15 +8,20 @@ Uses root [`render.yaml`](render.yaml). On first boot, `scripts/start_prod.sh` s
 
 After deploy, copy your service URL (e.g. `https://givefund-api.onrender.com`).
 
+## Frontend (Vercel) — recommended for UI
+
+1. [Import repo](https://vercel.com/new) → `ammar-adam/givefund`
+2. Framework preset: **Other** (static). Root `vercel.json` is already in the repo.
+3. **Environment variable** (Production + Preview):
+   ```
+   GIVEFUND_API_URL=https://YOUR-API-HOST.onrender.com
+   ```
+   Must be **HTTPS**. No trailing slash.
+4. Deploy → open the Vercel URL. Stats bar should show live counts (not the mock banner).
+
 ## Frontend (Netlify)
 
-1. [Import repo](https://app.netlify.com/start) → pick `ammar-adam/givefund`
-2. Build settings (from `netlify.toml`): base `frontend`, publish `.`
-3. Environment variable:
-   ```
-   GIVEFUND_API_URL=https://YOUR-RENDER-SERVICE.onrender.com
-   ```
-4. Deploy
+Same env var; see `netlify.toml` if you prefer Netlify over Vercel.
 
 ## Architecture
 
