@@ -1,18 +1,26 @@
+# Render blueprint — API with persistent SQLite on disk.
+# Set GIVEFUND_API_URL on Netlify to the deployed service URL.
+# Optional: DB_DOWNLOAD_URL to pull a pre-built database on startup.
+
 services:
   - type: web
     name: givefund-api
     runtime: python
+    plan: starter
     rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      pip install -r ../scraper/requirements.txt &&
+      playwright install chromium
+    startCommand: bash ../scripts/start_prod.sh
+    healthCheckPath: /health
     envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
       - key: DB_PATH
         value: /var/data/givefund.db
-      - key: PORT
-        fromService:
-          type: web
-          name: givefund-api
-          property: port
+      - key: DB_DOWNLOAD_URL
+        sync: false
     disk:
       name: givefund-data
       mountPath: /var/data

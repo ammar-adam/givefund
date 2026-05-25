@@ -247,6 +247,7 @@ async def get_stats() -> dict[str, Any]:
         }
 
     try:
+        connection.row_factory = aiosqlite.Row
         row = await _fetchone(
             connection,
             """

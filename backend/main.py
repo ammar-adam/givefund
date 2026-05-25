@@ -1,6 +1,10 @@
 import logging
 import os
+import subprocess
+import sys
 import time
+from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -26,7 +30,21 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="GiveFund API")
+def _sync_database_from_url() -> None:
+    """Download givefund.db when DB_DOWNLOAD_URL is configured."""
+    script = Path(__file__).resolve().parents[1] / "scripts" / "download_db.py"
+    if script.exists():
+        subprocess.run([sys.executable, str(script)], check=False)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup hooks for production database sync."""
+    _sync_database_from_url()
+    yield
+
+
+app = FastAPI(title="GiveFund API", lifespan=lifespan)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
