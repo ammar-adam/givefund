@@ -538,7 +538,7 @@
       </div>
       <div class="metric">
         <span class="metric-value">3</span>
-        <span class="metric-label">Platforms</span>
+        <span class="metric-label">Platforms with data</span>
       </div>
     </section>
 
@@ -778,8 +778,24 @@
       $("#emptyState").classList.add("hidden");
     }
 
-    function renderCard(c) {
+    function fundingDisplay(c) {
+      const raised = c.raised_amount;
+      const goal = c.goal_amount;
       const pct = Math.max(0, Math.min(c.pct_funded || 0, 100));
+      if (goal != null && goal > 0 && raised != null) {
+        return {
+          pct,
+          text: `<strong>${formatMoney(raised)}</strong> raised of ${formatMoney(goal)} goal · ${Math.round(pct)}% funded`
+        };
+      }
+      if (raised != null && raised > 0) {
+        return { pct: 0, text: `<strong>${formatMoney(raised)}</strong> raised` };
+      }
+      return { pct: 0, text: "See platform for funding details" };
+    }
+
+    function renderCard(c) {
+      const funding = fundingDisplay(c);
       const photo = c.photo_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23F1F5F9' width='400' height='240'/%3E%3C/svg%3E";
       const location = c.location ? `<span class="tag">${escapeHtml(c.location)}</span>` : "";
       const whyText = c.story_snippet || "Open the campaign to read their full story and donate on the original platform.";
@@ -804,12 +820,9 @@
             <div class="signal-footer">
               <div class="funding-meta">
                 <div class="progress-track" aria-hidden="true">
-                  <div class="progress-fill" style="width:${pct}%"></div>
+                  <div class="progress-fill" style="width:${funding.pct}%"></div>
                 </div>
-                <p class="funding-text">
-                  <strong>${formatMoney(c.raised_amount)}</strong> raised of ${formatMoney(c.goal_amount)} goal
-                  · ${Math.round(pct)}% funded
-                </p>
+                <p class="funding-text">${funding.text}</p>
               </div>
               <a class="cta-button" href="${escapeHtml(c.campaign_url)}" target="_blank" rel="noopener noreferrer">
                 Give now <span class="cta-arrow">→</span>

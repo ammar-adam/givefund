@@ -37,10 +37,37 @@ HITS_PER_PAGE = 50
 MAX_ALGOLIA_PAGES = 40
 
 
-def _money_minor_to_major(amount: Optional[float | int]) -> Optional[float]:
-    if amount is None:
+def _raised_major(balance: Optional[float | int]) -> Optional[float]:
+    """Algolia `balance` is always in cents."""
+    if balance is None:
         return None
-    return round(float(amount) / 100.0, 2)
+    return round(float(balance) / 100.0, 2)
+
+
+def _goal_major(
+    goalamount: Optional[float | int],
+    raised: Optional[float],
+    goal_progress: Optional[float | int],
+) -> Optional[float]:
+    """Parse goal from Algolia — balance is cents; goalamount is cents or dollars."""
+    if raised and goal_progress is not None:
+        try:
+            progress = float(goal_progress)
+            if progress > 1.5:
+                progress = progress / 100.0
+            if 0 < progress <= 1:
+                return round(raised / progress, 2)
+        except (TypeError, ValueError):
+            pass
+
+    if goalamount is None:
+        return None
+
+    raw = float(goalamount)
+    # Large values are cents (e.g. 13_000_000 → $130,000 goal).
+    if raw >= 10_000:
+        return round(raw / 100.0, 2)
+    return round(raw, 2)
 
 
 def _parse_algolia_hit(hit: dict[str, Any], category: str) -> Optional[dict]:
@@ -50,12 +77,14 @@ def _parse_algolia_hit(hit: dict[str, Any], category: str) -> Optional[dict]:
     story = (hit.get("funddescription") or "").strip()
     if len(story) > 500:
         story = story[:497] + "..."
+    raised = _raised_major(hit.get("balance"))
+    goal = _goal_major(hit.get("goalamount"), raised, hit.get("goal_progress"))
     return {
         "title": (hit.get("fundname") or "").strip() or None,
         "story_snippet": story or None,
         "photo_url": hit.get("thumb_img_url"),
-        "goal_amount": _money_minor_to_major(hit.get("goalamount")),
-        "raised_amount": _money_minor_to_major(hit.get("balance")),
+        "goal_amount": goal,
+        "raised_amount": raised,
         "platform": "gofundme",
         "campaign_url": f"https://www.gofundme.com/f/{str(slug).split('?')[0]}",
         "category": category,

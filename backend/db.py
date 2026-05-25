@@ -45,10 +45,17 @@ async def _fetchone(
 def _campaign_from_row(row: aiosqlite.Row) -> Campaign:
     """Convert a database row into the public campaign model."""
 
-    goal_amount = float(row["goal_amount"] or 0)
-    raised_amount = float(row["raised_amount"] or 0)
-    funding_gap = max(goal_amount - raised_amount, 0.0)
-    pct_funded = round((raised_amount / goal_amount) * 100, 2) if goal_amount > 0 else 0.0
+    goal_raw = row["goal_amount"]
+    raised_raw = row["raised_amount"]
+    goal_amount = float(goal_raw) if goal_raw is not None else 0.0
+    raised_amount = float(raised_raw) if raised_raw is not None else 0.0
+    funding_gap = (
+        max(goal_amount - raised_amount, 0.0) if goal_raw is not None and raised_raw is not None else 0.0
+    )
+    if goal_raw is not None and raised_raw is not None and goal_amount > 0:
+        pct_funded = round(min((raised_amount / goal_amount) * 100, 999.99), 2)
+    else:
+        pct_funded = 0.0
 
     keys = row.keys()
     location = row["location"] if "location" in keys else None
@@ -248,14 +255,18 @@ async def get_stats() -> dict[str, Any]:
 
     try:
         connection.row_factory = aiosqlite.Row
+        count_row = await _fetchone(
+            connection,
+            "SELECT COUNT(*) AS total_campaigns FROM campaigns",
+        )
         row = await _fetchone(
             connection,
             """
             SELECT
-              COUNT(*) AS total_campaigns,
               COALESCE(SUM(raised_amount), 0) AS total_raised,
               MAX(scraped_at) AS last_scraped
             FROM campaigns
+            WHERE raised_amount IS NOT NULL AND raised_amount >= 0
             """,
         )
         platform_rows = await connection.execute_fetchall(
@@ -270,7 +281,7 @@ async def get_stats() -> dict[str, Any]:
         await connection.close()
 
     return {
-        "total_campaigns": int(row["total_campaigns"] if row else 0),
+        "total_campaigns": int(count_row["total_campaigns"] if count_row else 0),
         "total_raised": float(row["total_raised"] if row else 0),
         "platforms": [r[0] for r in platform_rows],
         "last_scraped": row["last_scraped"] if row else None,
