@@ -1,114 +1,86 @@
-"""Fundly explore scraper."""
+"""Fundly scraper — fundly.com redirects to SignUpGenius; scrape public Fundly listings where available."""
 
 import logging
+import re
 from typing import Optional
 
-from playwright.async_api import ElementHandle
+from playwright.async_api import async_playwright
 
-from platforms.base import (
-    PAGES_PER_CATEGORY,
-    extract_amounts_from_card,
-    find_cards,
-    first_text,
-    new_scrape_page,
-    page_delay,
-)
+from platforms.base import new_scrape_page, parse_amount
 
 logger = logging.getLogger(__name__)
 
-EXPLORE_URL = "https://fundly.com/explore"
-
-_CARD_SELECTORS = [
-    "a[href*='/campaign/']",
-    "[class*='campaign']",
-    ".campaign-card",
-    "article",
+# Fundly's explore URL redirects; try campaign search pages on signupgenius fundly hub
+CANDIDATE_URLS = [
+    "https://fundly.com/p/campaigns",
+    "https://fundly.com/campaign/browse",
 ]
 
-_TITLE_SELECTORS = ["h2", "h3", "[class*='title']", ".campaign-title"]
-_SNIPPET_SELECTORS = ["p", "[class*='description']", ".campaign-description"]
 
+async def _extract_from_page(page, source_url: str) -> list[dict]:
+    """Pull campaign-like links and minimal fields from the current page."""
+    html = await page.content()
+    # Fundly campaign URLs historically: /campaigns/slug or fundly.com/c/slug
+    patterns = [
+        r'href="(https?://(?:www\.)?fundly\.com/campaigns/[^"]+)"',
+        r'href="(https?://(?:www\.)?fundly\.com/c/[^"]+)"',
+        r'href="(/campaigns/[^"]+)"',
+    ]
+    urls: set[str] = set()
+    for pat in patterns:
+        for match in re.findall(pat, html):
+            full = match if match.startswith("http") else f"https://fundly.com{match}"
+            urls.add(full.split("?")[0])
 
-async def _extract_campaign(card: ElementHandle) -> Optional[dict]:
-    """Extract one Fundly campaign from a card element."""
-    try:
-        href = await card.get_attribute("href")
-        if not href:
-            link = await card.query_selector("a[href*='/campaign/']")
-            href = await link.get_attribute("href") if link else None
-        if not href or "/campaign/" not in href:
-            return None
-
-        campaign_url = href if href.startswith("http") else f"https://fundly.com{href}"
-        title = await first_text(card, _TITLE_SELECTORS)
-        story_snippet = await first_text(card, _SNIPPET_SELECTORS)
-
-        photo_url: Optional[str] = None
-        img = await card.query_selector("img")
-        if img:
-            photo_url = await img.get_attribute("src") or await img.get_attribute("data-src")
-
-        raised_amount, goal_amount = await extract_amounts_from_card(card)
-
-        category = "community"
-        text = f"{title or ''} {story_snippet or ''}".lower()
-        for key in ("medical", "education", "emergency"):
-            if key in text:
-                category = key
-                break
-
-        return {
+    campaigns: list[dict] = []
+    for url in list(urls)[:30]:
+        slug = url.rstrip("/").split("/")[-1]
+        title = slug.replace("-", " ").title()
+        campaigns.append({
             "title": title,
-            "story_snippet": story_snippet,
-            "photo_url": photo_url,
-            "goal_amount": goal_amount,
-            "raised_amount": raised_amount,
+            "story_snippet": None,
+            "photo_url": None,
+            "goal_amount": None,
+            "raised_amount": None,
             "platform": "fundly",
-            "campaign_url": campaign_url,
-            "category": category,
+            "campaign_url": url,
+            "category": "community",
             "location": None,
-        }
-    except Exception as exc:
-        logger.error("Fundly card extraction failed: %s", exc)
-        return None
+        })
+    if campaigns:
+        logger.info("[fundly] extracted %d links from %s", len(campaigns), source_url)
+    return campaigns
 
 
 async def scrape_fundly() -> list[dict]:
-    """Scrape Fundly explore with pagination."""
-    from playwright.async_api import async_playwright
-
-    campaigns: list[dict] = []
+    """Attempt Fundly scrape; returns empty list if site has no public listings."""
+    all_campaigns: list[dict] = []
 
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
         page = await new_scrape_page(browser)
         try:
-            for page_num in range(1, PAGES_PER_CATEGORY + 1):
-                url = f"{EXPLORE_URL}?page={page_num}"
-                logger.info("[fundly] page %d -- %s", page_num, url)
+            for url in CANDIDATE_URLS:
                 try:
-                    await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-                    await page.wait_for_timeout(2000)
+                    logger.info("[fundly] trying %s", url)
+                    response = await page.goto(url, wait_until="domcontentloaded", timeout=25_000)
+                    final = page.url
+                    if "signupgenius" in final and "fundly" not in final.lower():
+                        logger.warning("[fundly] %s redirected to %s — no listings", url, final)
+                        continue
+                    found = await _extract_from_page(page, url)
+                    all_campaigns.extend(found)
+                    if found:
+                        break
                 except Exception as exc:
-                    logger.error("[fundly] page %d failed: %s", page_num, exc)
-                    break
-
-                cards = await find_cards(page, _CARD_SELECTORS)
-                if not cards:
-                    logger.info("[fundly] page %d: empty, stopping", page_num)
-                    break
-
-                logger.info("[fundly] page %d: %d cards", page_num, len(cards))
-                seen: set[str] = set()
-                for card in cards:
-                    campaign = await _extract_campaign(card)
-                    if campaign and campaign["campaign_url"] not in seen:
-                        seen.add(campaign["campaign_url"])
-                        campaigns.append(campaign)
-
-                await page_delay()
+                    logger.error("[fundly] %s failed: %s", url, exc)
         finally:
             await page.close()
             await browser.close()
 
-    return campaigns
+    if not all_campaigns:
+        logger.warning(
+            "[fundly] no campaigns found — fundly.com no longer hosts a public explore page. "
+            "Fundly campaigns are omitted until a stable listing URL exists."
+        )
+    return all_campaigns
