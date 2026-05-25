@@ -1,52 +1,62 @@
 # Style Guide
 
 ## Design System
-Font: Inter, loaded from https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap
-Background: #FAFAFA
+Font: Inter + Instrument Serif (hero/stats), loaded from Google Fonts
+Background: #F7F3ED
 Card background: #FFFFFF
-Card border radius: 16px
-Card shadow: 0 2px 8px rgba(0,0,0,0.08)
-Accent / CTA color: #E8533A
-Primary text: #1A1A1A
-Secondary text: #6B6B6B
-Border color: #EEEEEE
+Card border: 1px solid #E8E2D9
+Card border radius: 14px
+Card shadow: 0 1px 4px rgba(28, 25, 23, 0.06)
+Nav background: #FFFFFF
+Nav border-bottom: 1px solid #E8E2D9
+Footer background: #1C1917
+Footer text: #A8A29E
+Primary text: #1C1917
+Secondary text: #78716C
+Accent: #E8533A
+Accent hover: #D44530
+Border color: #E8E2D9
 
-Progress bar colors:
-  >75% funded: #22C55E (green)
-  >40% funded: #F59E0B (amber)
-  <=40% funded: #EF4444 (red)
-Progress bar background: #F0F0F0
-Progress bar height: 8px, border-radius: 4px
+Progress bar:
+  fill: #E8533A
+  opacity: >75% funded = 1.0, >40% = 0.7, below = 0.45
+  background: #E8E2D9
+  height: 8px, border-radius: 4px
 
 ## UI Feel
 Warm, human, trustworthy. This is about real people in real situations.
 Cards should feel like stories, not product listings.
 Generous whitespace. Nothing cramped.
 Photos are 16:9 aspect ratio, object-fit cover, top of card.
-Platform badge: small pill top-right of photo, white background, #6B6B6B text, 12px font.
+Platform badge on cards: background #F7F3ED, border 1px solid #E8E2D9, text #78716C, 12px font.
 
 ## Button Style
 Give Now button:
-  background: #E8533A
+  background: #1C1917
   color: white
   border-radius: 8px
   padding: 12px 20px
   font-weight: 600
-  width: 100%
-  cursor: pointer
-  no border
-  hover: background #D44530
+  hover: background #E8533A
 
 Category pill (unselected):
-  background: #F0F0F0
-  color: #6B6B6B
+  background: #EDE8E1
+  color: #78716C
   border-radius: 999px
   padding: 8px 16px
   font-size: 14px
 
 Category pill (selected):
-  background: #1A1A1A
+  background: #1C1917
   color: #FFFFFF
+
+## Typography
+Hero serif headline: Instrument Serif italic, color #1C1917
+Stats numbers: Instrument Serif, color #1C1917
+Stats labels: #78716C, uppercase, letter-spacing 0.08em, 11px
+Card title: #1C1917, font-weight 600
+Card story snippet: #78716C
+Nav links: #78716C, hover #1C1917
 
 ## Python Conventions
 - Type hints on every function signature

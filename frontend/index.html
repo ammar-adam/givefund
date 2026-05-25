@@ -9,22 +9,28 @@
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #FAFAF8;
+      --bg: #F7F3ED;
       --surface: #FFFFFF;
-      --ink: #121212;
-      --muted: #5C5C5C;
-      --muted-light: #8A8A8A;
-      --border: #E8E6E1;
-      --border-soft: #F0EEEA;
-      --accent: #121212;
-      --accent-hover: #2A2A2A;
-      --accent-soft: #F3F2EF;
+      --ink: #1C1917;
+      --muted: #78716C;
+      --muted-light: #A8A29E;
+      --border: #E8E2D9;
+      --border-soft: #EDE8E1;
+      --accent: #E8533A;
+      --accent-hover: #D44530;
+      --pill-bg: #EDE8E1;
+      --pill-selected: #1C1917;
+      --btn-dark: #1C1917;
+      --progress-bg: #E8E2D9;
+      --badge-bg: #F7F3ED;
+      --footer-bg: #1C1917;
+      --footer-text: #A8A29E;
       --serif: "Instrument Serif", Georgia, serif;
       --sans: "Inter", system-ui, sans-serif;
-      --shadow-sm: 0 1px 3px rgba(18, 18, 18, 0.04);
-      --shadow-md: 0 12px 40px rgba(18, 18, 18, 0.08);
+      --shadow-sm: 0 1px 4px rgba(28, 25, 23, 0.06);
+      --shadow-md: 0 8px 28px rgba(28, 25, 23, 0.08);
       --radius: 10px;
-      --radius-lg: 20px;
+      --radius-lg: 14px;
       --radius-pill: 999px;
     }
 
@@ -54,9 +60,8 @@
       justify-content: space-between;
       gap: 24px;
       padding: 18px 40px;
-      background: rgba(250, 250, 248, 0.92);
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(14px);
     }
 
     .nav-left {
@@ -69,6 +74,7 @@
       font-size: 17px;
       font-weight: 700;
       letter-spacing: -0.04em;
+      color: var(--ink);
     }
 
     .nav-links {
@@ -91,7 +97,7 @@
       align-items: center;
       padding: 10px 22px;
       border-radius: var(--radius-pill);
-      background: var(--accent);
+      background: var(--btn-dark);
       color: #fff;
       font-size: 14px;
       font-weight: 600;
@@ -99,10 +105,10 @@
       transition: background 0.15s;
     }
 
-    .nav-cta:hover { background: var(--accent-hover); }
+    .nav-cta:hover { background: var(--accent); }
 
     .hero {
-      padding: 72px 40px 48px;
+      padding: 92px 40px 48px;
       max-width: 1180px;
       margin: 0 auto;
       text-align: center;
@@ -146,7 +152,7 @@
       gap: 8px;
       padding: 14px 28px;
       border-radius: var(--radius-pill);
-      background: var(--accent);
+      background: var(--btn-dark);
       color: #fff;
       font-size: 15px;
       font-weight: 600;
@@ -156,7 +162,7 @@
       transition: background 0.15s;
     }
 
-    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-primary:hover { background: var(--accent); }
 
     .btn-ghost {
       display: inline-flex;
@@ -262,6 +268,7 @@
       border-radius: var(--radius-lg);
       background: var(--surface);
       border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
     }
 
     .cap-card h3 {
@@ -270,6 +277,7 @@
       font-size: 26px;
       font-weight: 400;
       letter-spacing: -0.02em;
+      color: var(--ink);
     }
 
     .cap-card p {
@@ -285,14 +293,15 @@
       gap: 20px;
       max-width: 1180px;
       margin: 0 auto;
-      padding: 0 40px 48px;
+      padding: 48px 40px 56px;
     }
 
     .metric {
-      padding: 28px 32px;
+      padding: 32px 36px;
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--surface);
+      box-shadow: var(--shadow-sm);
       text-align: center;
     }
 
@@ -303,14 +312,17 @@
       font-weight: 400;
       letter-spacing: -0.03em;
       line-height: 1.1;
+      color: var(--ink);
     }
 
     .metric-label {
       display: block;
-      margin-top: 6px;
-      font-size: 13px;
+      margin-top: 8px;
+      font-size: 11px;
       color: var(--muted);
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
     .feed-section {
@@ -334,6 +346,7 @@
       font-size: 36px;
       font-weight: 400;
       letter-spacing: -0.02em;
+      color: var(--ink);
     }
 
     .feed-header p {
@@ -368,9 +381,9 @@
     }
 
     .pill {
-      border: 1px solid var(--border);
+      border: 1px solid transparent;
       border-radius: var(--radius-pill);
-      background: var(--surface);
+      background: var(--pill-bg);
       color: var(--muted);
       cursor: pointer;
       font-size: 13px;
@@ -379,11 +392,11 @@
       transition: all 0.15s ease;
     }
 
-    .pill:hover { border-color: var(--ink); color: var(--ink); }
+    .pill:hover { color: var(--ink); }
 
     .pill[aria-pressed="true"] {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: var(--pill-selected);
+      border-color: var(--pill-selected);
       color: #fff;
     }
 
@@ -424,6 +437,7 @@
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--surface);
+      box-shadow: var(--shadow-sm);
       transition: box-shadow 0.2s ease, transform 0.2s ease;
     }
 
@@ -449,7 +463,7 @@
     .signal-body {
       display: flex;
       flex-direction: column;
-      padding: 24px 28px;
+      padding: 20px;
       gap: 10px;
     }
 
@@ -478,8 +492,9 @@
     }
 
     .tag-platform {
-      background: var(--ink);
-      color: #fff;
+      background: var(--badge-bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
     }
 
     .signal-title {
@@ -488,6 +503,7 @@
       font-weight: 600;
       letter-spacing: -0.03em;
       line-height: 1.25;
+      color: var(--ink);
     }
 
     .signal-story {
@@ -514,17 +530,17 @@
     .funding-meta { flex: 1; min-width: 200px; }
 
     .progress-track {
-      height: 5px;
-      border-radius: var(--radius-pill);
-      background: var(--border-soft);
+      height: 8px;
+      border-radius: 4px;
+      background: var(--progress-bg);
       overflow: hidden;
       margin-bottom: 8px;
     }
 
     .progress-fill {
       height: 100%;
-      border-radius: var(--radius-pill);
-      background: var(--ink);
+      border-radius: 4px;
+      background: var(--accent);
     }
 
     .funding-text {
@@ -539,9 +555,9 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 12px 22px;
-      border-radius: var(--radius-pill);
-      background: var(--accent);
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--btn-dark);
       color: #fff;
       font-size: 14px;
       font-weight: 600;
@@ -550,7 +566,7 @@
       transition: background 0.15s;
     }
 
-    .cta-button:hover { background: var(--accent-hover); text-decoration: none; }
+    .cta-button:hover { background: var(--accent); text-decoration: none; }
 
     .donate-wrap {
       display: flex;
@@ -561,7 +577,7 @@
 
     .donate-hint {
       margin: 0;
-      font-size: 12px;
+      font-size: 11px;
       line-height: 1.35;
       color: var(--muted);
       text-align: right;
@@ -629,7 +645,7 @@
       margin: 0 40px 64px;
       padding: 56px 48px;
       border-radius: var(--radius-lg);
-      background: var(--ink);
+      background: var(--footer-bg);
       color: #fff;
       text-align: center;
       max-width: 1100px;
@@ -697,14 +713,18 @@
     }
 
     .footer {
-      border-top: 1px solid var(--border);
+      border-top: none;
       padding: 48px 40px;
       text-align: center;
-      background: var(--surface);
+      background: var(--footer-bg);
     }
 
-    .footer .logo { margin-bottom: 8px; }
-    .footer p { margin: 0; font-size: 14px; color: var(--muted); }
+    .footer .logo {
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .footer p { margin: 0; font-size: 14px; color: var(--footer-text); }
 
     .hidden { display: none !important; }
 
@@ -918,6 +938,38 @@
       return PLATFORM_LABELS[id] || id;
     }
 
+    /** Normalize ALL-CAPS GoFundMe snippets to sentence case (first 300 chars). */
+    function formatStorySnippet(snippet) {
+      if (!snippet) return "";
+      const text = snippet.slice(0, 300);
+      const letters = text.replace(/[^a-zA-Z]/g, "");
+      const isAllCaps = letters.length > 8 && letters === letters.toUpperCase();
+      if (!isAllCaps) {
+        return text.charAt(0).toUpperCase() + text.slice(1);
+      }
+      const lower = text.toLowerCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    }
+
+    function progressOpacity(pct) {
+      if (pct > 75) return 1;
+      if (pct > 40) return 0.7;
+      return 0.45;
+    }
+
+    async function fetchPlatformCount() {
+      try {
+        const res = await fetch(`${API_URL}/platforms`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.platforms?.length) return data.platforms.length;
+        }
+      } catch {
+        /* fall through */
+      }
+      return new Set(MOCK_CAMPAIGNS.map((c) => c.platform)).size;
+    }
+
     /**
      * Build the lowest-friction donate URL for a campaign.
      * GoFundMe and LaunchGood use /donate subpages; others fall back to campaign_url.
@@ -1021,7 +1073,6 @@
           const data = await res.json();
           if (data.platforms?.length) {
             state.catalog = data.platforms;
-            $("#platformCount").textContent = String(data.count || data.platforms.length);
           }
         }
       } catch {
@@ -1108,11 +1159,11 @@
               ${location}
             </div>
             <h2 class="signal-title">${escapeHtml(c.title)}</h2>
-            <p class="signal-story">${escapeHtml(c.story_snippet)}</p>
+            <p class="signal-story story-snippet">${escapeHtml(formatStorySnippet(c.story_snippet))}</p>
             <div class="signal-footer">
               <div class="funding-meta">
                 <div class="progress-track" aria-hidden="true">
-                  <div class="progress-fill" style="width:${pct}%"></div>
+                  <div class="progress-fill" style="width:${pct}%;opacity:${progressOpacity(pct)}"></div>
                 </div>
                 <p class="funding-text">
                   <strong>${formatMoney(c.raised_amount)}</strong> raised of ${formatMoney(c.goal_amount)}
@@ -1123,7 +1174,7 @@
                 <a class="cta-button" href="${escapeHtml(donateUrl)}" target="_blank" rel="noopener noreferrer">
                   Give now →
                 </a>
-                <p class="donate-hint">You'll be taken to ${escapeHtml(plat)} to complete your donation</p>
+                <p class="donate-hint">Completes on ${escapeHtml(plat)}</p>
               </div>
             </div>
           </div>
@@ -1145,19 +1196,21 @@
 
     async function fetchStats() {
       const metrics = $("#statsBar").querySelectorAll(".metric-value");
+      const platformCount = await fetchPlatformCount();
       try {
         const res = await fetch(`${API_URL}/stats`);
         if (!res.ok) throw new Error("stats failed");
         const data = await res.json();
         metrics[0].textContent = data.total_campaigns.toLocaleString();
         metrics[1].textContent = formatMoney(data.total_raised);
-        metrics[2].textContent = String(state.catalog.length);
+        metrics[2].textContent = String(platformCount);
       } catch {
         const total = MOCK_CAMPAIGNS.reduce((s, c) => s + (c.raised_amount || 0), 0);
         metrics[0].textContent = String(MOCK_CAMPAIGNS.length);
         metrics[1].textContent = formatMoney(total);
-        metrics[2].textContent = String(state.catalog.length);
+        metrics[2].textContent = String(platformCount);
       }
+      $("#platformCount").textContent = String(platformCount);
     }
 
     async function fetchCampaigns() {
