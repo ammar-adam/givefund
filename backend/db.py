@@ -50,23 +50,31 @@ def _campaign_from_row(row: aiosqlite.Row) -> Campaign:
     funding_gap = max(goal_amount - raised_amount, 0.0)
     pct_funded = round((raised_amount / goal_amount) * 100, 2) if goal_amount > 0 else 0.0
 
+    keys = row.keys()
+    location = row["location"] if "location" in keys else None
+
     return Campaign(
         id=row["id"],
         title=row["title"],
         story_snippet=row["story_snippet"],
         photo_url=row["photo_url"],
-        goal_amount=goal_amount,
-        raised_amount=raised_amount,
+        goal_amount=goal_amount if row["goal_amount"] is not None else None,
+        raised_amount=raised_amount if row["raised_amount"] is not None else None,
         funding_gap=funding_gap,
         pct_funded=pct_funded,
         platform=row["platform"] or "gofundme",
         campaign_url=row["campaign_url"],
         category=row["category"],
+        location=location,
         scraped_at=row["scraped_at"],
     )
 
 
-def _filters(search: str | None, category: str | None) -> tuple[list[str], dict[str, Any]]:
+def _filters(
+    search: str | None,
+    category: str | None,
+    platform: str | None,
+) -> tuple[list[str], dict[str, Any]]:
     """Build reusable WHERE clauses and query parameters."""
 
     clauses: list[str] = []
@@ -79,6 +87,10 @@ def _filters(search: str | None, category: str | None) -> tuple[list[str], dict[
     if category:
         clauses.append("category = :category")
         params["category"] = category
+
+    if platform:
+        clauses.append("platform = :platform")
+        params["platform"] = platform
 
     return clauses, params
 
@@ -95,8 +107,8 @@ def _order_sql(sort_by: str) -> str:
     if sort_by == "almost_there":
         return """
         ORDER BY
-          CASE WHEN goal_amount > raised_amount THEN 0 ELSE 1 END,
-          (goal_amount - raised_amount) ASC,
+          CASE WHEN goal_amount > 0 AND raised_amount >= goal_amount THEN 1 ELSE 0 END,
+          CASE WHEN goal_amount > 0 THEN (raised_amount * 1.0 / goal_amount) ELSE 0 END DESC,
           scraped_at DESC
         """
     if sort_by == "newest":
@@ -104,9 +116,16 @@ def _order_sql(sort_by: str) -> str:
     return "ORDER BY (goal_amount - raised_amount) DESC, scraped_at DESC"
 
 
+_SELECT_COLUMNS = """
+    id, title, story_snippet, photo_url, goal_amount, raised_amount,
+    platform, campaign_url, category, location, scraped_at
+"""
+
+
 async def get_campaigns(
     search: str | None,
     category: str | None,
+    platform: str | None,
     sort_by: str,
     page: int,
     page_size: int,
@@ -119,7 +138,7 @@ async def get_campaigns(
 
     try:
         connection.row_factory = aiosqlite.Row
-        clauses, params = _filters(search, category)
+        clauses, params = _filters(search, category, platform)
         where_sql = _where_sql(clauses)
         offset = (page - 1) * page_size
 
@@ -133,8 +152,7 @@ async def get_campaigns(
 
         rows = await connection.execute_fetchall(
             f"""
-            SELECT id, title, story_snippet, photo_url, goal_amount, raised_amount,
-                   platform, campaign_url, category, scraped_at
+            SELECT {_SELECT_COLUMNS}
             FROM campaigns
             {where_sql}
             {_order_sql(sort_by)}
@@ -159,9 +177,8 @@ async def get_campaign(campaign_id: int) -> Campaign | None:
         connection.row_factory = aiosqlite.Row
         row = await _fetchone(
             connection,
-            """
-            SELECT id, title, story_snippet, photo_url, goal_amount, raised_amount,
-                   platform, campaign_url, category, scraped_at
+            f"""
+            SELECT {_SELECT_COLUMNS}
             FROM campaigns
             WHERE id = :campaign_id
             """,
@@ -193,6 +210,70 @@ async def get_categories() -> list[str]:
         await connection.close()
 
     return [row[0] for row in rows]
+
+
+async def get_platforms() -> list[str]:
+    """Fetch distinct platforms present in the database."""
+
+    connection = await connect_readonly()
+    if connection is None:
+        return []
+
+    try:
+        rows = await connection.execute_fetchall(
+            """
+            SELECT DISTINCT platform
+            FROM campaigns
+            WHERE platform IS NOT NULL AND platform != ''
+            ORDER BY platform
+            """
+        )
+    finally:
+        await connection.close()
+
+    return [row[0] for row in rows]
+
+
+async def get_stats() -> dict[str, Any]:
+    """Return aggregate stats for the stats endpoint."""
+
+    connection = await connect_readonly()
+    if connection is None:
+        return {
+            "total_campaigns": 0,
+            "total_raised": 0.0,
+            "platforms": [],
+            "last_scraped": None,
+        }
+
+    try:
+        row = await _fetchone(
+            connection,
+            """
+            SELECT
+              COUNT(*) AS total_campaigns,
+              COALESCE(SUM(raised_amount), 0) AS total_raised,
+              MAX(scraped_at) AS last_scraped
+            FROM campaigns
+            """,
+        )
+        platform_rows = await connection.execute_fetchall(
+            """
+            SELECT DISTINCT platform
+            FROM campaigns
+            WHERE platform IS NOT NULL
+            ORDER BY platform
+            """
+        )
+    finally:
+        await connection.close()
+
+    return {
+        "total_campaigns": int(row["total_campaigns"] if row else 0),
+        "total_raised": float(row["total_raised"] if row else 0),
+        "platforms": [r[0] for r in platform_rows],
+        "last_scraped": row["last_scraped"] if row else None,
+    }
 
 
 async def get_campaign_count() -> int:

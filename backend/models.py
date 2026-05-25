@@ -17,6 +17,7 @@ class Campaign(BaseModel):
     platform: str = "gofundme"
     campaign_url: str
     category: str | None = None
+    location: str | None = None
     scraped_at: str | None = None
 
 
@@ -33,6 +34,21 @@ class CategoriesResponse(BaseModel):
     """Available campaign categories."""
 
     categories: list[str]
+
+
+class PlatformsResponse(BaseModel):
+    """Available campaign platforms."""
+
+    platforms: list[str]
+
+
+class StatsResponse(BaseModel):
+    """Aggregate campaign statistics."""
+
+    total_campaigns: int
+    total_raised: float
+    platforms: list[str]
+    last_scraped: str | None = None
 
 
 class HealthResponse(BaseModel):
