@@ -13,7 +13,7 @@ from platforms.base import PAGES_PER_CATEGORY, new_scrape_page, page_delay, pars
 logger = logging.getLogger(__name__)
 
 DISCOVER_URL = "https://www.launchgood.com/discover"
-MAX_ENRICH = 40  # cap per run to stay polite and fast
+MAX_ENRICH = 50  # cap per run to stay polite and fast
 
 
 def _category_from_text(text: str) -> str:
