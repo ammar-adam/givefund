@@ -21,7 +21,7 @@ Campaign fields include: id, title, story_snippet, photo_url, goal_amount, raise
 - [x] Upsert by campaign_url; DB schema with location + indexes
 - [x] `scheduler.py` — 24h schedule via `schedule` library
 - [x] `seed_db.py` for local dev when sites block scraping
-- [x] Test: `python seed_db.py` then `python main.py --platform gofundme` (live scrape needs `playwright install chromium`)
+- [x] Live scrape verified: GoFundMe Algolia (~15/run), LaunchGood v4 (~18/run); Fundly skipped (redirect)
 
 ## Agent 2 (Backend) Tasks
 - [x] FastAPI with aiosqlite read-only access
@@ -42,4 +42,5 @@ Campaign fields include: id, title, story_snippet, photo_url, goal_amount, raise
 ## Notes
 - **2026-05-25 Orchestrator**: Full stack integrated. DB seeded with 6 sample campaigns for verification when live scraping is blocked. Playwright 1.44 may fail to build on Python 3.13 without MSVC — use Python 3.11 or install build tools, then `playwright install chromium`.
 - **Branches pushed**: `agent/scraper`, `agent/backend`, `agent/frontend` (and legacy `agent1/scraper`, etc. on remote).
-- **Partial**: Live scrapers depend on third-party DOM selectors; re-run after markup changes. LaunchGood/Fundly may return 0 rows until selectors are tuned against live pages.
+- **Prod deploy**: See PRODUCTION.md — Render API, Netlify frontend, GHA daily scrape artifact.
+- **Partial**: Fundly has no public listing URL. GoFundMe returns overlapping hits across categories (~15 unique) until scroll/pagination is improved.
