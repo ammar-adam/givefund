@@ -1,0 +1,50 @@
+name: Daily Scrape
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install scraper dependencies
+        run: |
+          pip install -r scraper/requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run GoFundMe scraper
+        run: cd scraper && python main.py --platform gofundme
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund.db
+
+      - name: Run LaunchGood scraper
+        run: cd scraper && python main.py --platform launchgood
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund.db
+
+      - name: Report row count
+        run: sqlite3 givefund.db "SELECT platform, COUNT(*) FROM campaigns GROUP BY platform;"
+
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: givefund-db
+          path: givefund.db
+          retention-days: 14
+
+      - name: Smoke test API against scraped DB
+        run: |
+          pip install -r backend/requirements.txt
+          cd backend
+          DB_PATH=${{ github.workspace }}/givefund.db uvicorn main:app --host 127.0.0.1 --port 8765 &
+          sleep 3
+          curl -sf http://127.0.0.1:8765/health
+          curl -sf "http://127.0.0.1:8765/campaigns?page_size=1" | grep -q campaigns
