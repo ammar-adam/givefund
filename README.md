@@ -60,12 +60,9 @@ See **[HANDOFF.md](./HANDOFF.md)** for local development and **[PRODUCTION.md](.
 | `GET /stats` | Totals and last scraped time |
 | `GET /health` | Status and row count |
 
-## Branches
+## Git
 
-- `agent/scraper` — scraper work
-- `agent/backend` — API work
-- `agent/frontend` — UI work
-- `main` — integrated default branch
+All development happens on **`main`**. Commit prefixes: `[scraper]`, `[backend]`, `[frontend]`, `docs:`, `[ops]:`.
 
 ## License
 

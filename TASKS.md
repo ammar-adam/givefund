@@ -41,6 +41,6 @@ Campaign fields include: id, title, story_snippet, photo_url, goal_amount, raise
 
 ## Notes
 - **2026-05-25 Orchestrator**: Full stack integrated. DB seeded with 6 sample campaigns for verification when live scraping is blocked. Playwright 1.44 may fail to build on Python 3.13 without MSVC — use Python 3.11 or install build tools, then `playwright install chromium`.
-- **Branches pushed**: `agent/scraper`, `agent/backend`, `agent/frontend` (and legacy `agent1/scraper`, etc. on remote).
+- **Git**: single branch `main` only (agent/* branches removed).
 - **Prod deploy**: See PRODUCTION.md — Render API, Netlify frontend, GHA daily scrape artifact.
 - **Partial**: Fundly has no public listing URL. GoFundMe returns overlapping hits across categories (~15 unique) until scroll/pagination is improved.

@@ -1,8 +1,10 @@
 # Agent Boundaries
 
+All work is merged to **`main`** only. Folder boundaries below are for organization, not separate git branches.
+
 ## Agent 1 -- Scraper
 - Works exclusively in /scraper
-- Owns: scraper/main.py, scraper/scraper.py, scraper/db.py, scraper/requirements.txt
+- Owns: scraper/main.py, scraper/platforms/, scraper/db.py, scraper/requirements.txt
 - Writes to givefund.db at repo root (path from DB_PATH env var)
 - Does NOT read from the backend, does NOT touch /backend or /frontend
 - Entry point: python main.py (optionally: python main.py --category medical)

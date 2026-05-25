@@ -32,20 +32,9 @@ After deploy, copy your service URL (e.g. `https://givefund-api.onrender.com`).
 
 **Daily GitHub Actions:**
 
-- [`scrape.yml`](.github/workflows/scrape.yml) — 06:00 UTC, uploads `givefund.db` artifact
-- [`publish-db.yml`](.github/workflows/publish-db.yml) — pushes DB to `data` branch
+- [`scrape.yml`](.github/workflows/scrape.yml) — 06:00 UTC, uploads `givefund.db` as a workflow artifact (download from Actions tab if needed)
 
-**Pull DB on startup without scraping:**
-
-Set on Render:
-
-```
-DB_DOWNLOAD_URL=https://raw.githubusercontent.com/ammar-adam/givefund/data/data/givefund.db
-SKIP_DB_DOWNLOAD=false
-SCRAPE_ON_START=false
-```
-
-(First `data` branch publish happens after the first successful daily scrape workflow.)
+**Optional:** set `DB_DOWNLOAD_URL` on Render to any HTTPS URL hosting a `givefund.db` snapshot, with `SCRAPE_ON_START=false`.
 
 ## Scraper scale (verified)
 
