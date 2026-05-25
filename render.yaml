@@ -1,0 +1,28 @@
+# Render Blueprint — deploy from repo root: https://render.com/deploy
+# Docs: PRODUCTION.md
+
+services:
+  - type: web
+    name: givefund-api
+    runtime: python
+    plan: starter
+    rootDir: backend
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      pip install -r ../scraper/requirements.txt &&
+      playwright install chromium
+    startCommand: bash ../scripts/start_prod.sh
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DB_PATH
+        value: /var/data/givefund.db
+      - key: DB_DOWNLOAD_URL
+        sync: false
+      - key: SCRAPE_ON_START
+        value: "true"
+    disk:
+      name: givefund-data
+      mountPath: /var/data
+      sizeGB: 1

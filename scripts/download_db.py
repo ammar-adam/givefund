@@ -8,6 +8,8 @@ from pathlib import Path
 
 def main() -> int:
     """Download DB file when DB_DOWNLOAD_URL is set."""
+    if os.getenv("SKIP_DB_DOWNLOAD", "").lower() in ("1", "true", "yes"):
+        return 0
     url = os.getenv("DB_DOWNLOAD_URL", "").strip()
     if not url:
         return 0
