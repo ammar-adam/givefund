@@ -13,14 +13,28 @@ logger = logging.getLogger(__name__)
 
 CATEGORY_SLUGS: dict[str, str] = {
     "medical": "medical-fundraising",
-    "education": "education-fundraising",
+    "memorial": "memorial-fundraising",
     "emergency": "emergency-fundraising",
-    "community": "community",
+    "charity": "charity-fundraiser",
+    "education": "education-fundraising",
+    "animal": "animal-fundraising",
+    "environment": "environment-fundraising",
+    "business": "business-fundraising",
+    "community": "community-fundraising",
+    "competition": "competition-fundraising",
+    "creative": "creative-fundraising",
+    "event": "event-fundraising",
+    "faith": "faith-fundraising",
+    "family": "family-fundraising",
+    "sports": "sports-fundraising",
+    "travel": "travel-fundraising",
+    "volunteer": "volunteer-fundraising",
+    "wishes": "wishes-fundraising",
 }
 
 LOAD_MORE = 'button:has-text("Show more")'
 HITS_PER_PAGE = 50
-MAX_ALGOLIA_PAGES = 5
+MAX_ALGOLIA_PAGES = 40
 
 
 def _money_minor_to_major(amount: Optional[float | int]) -> Optional[float]:

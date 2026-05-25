@@ -14,9 +14,23 @@ INDEX_NAME = "prod_funds_feed_replica_1"
 
 CATEGORY_ALGOLIA_IDS: dict[str, int] = {
     "medical": 13,
-    "education": 2,
+    "memorial": 1,
     "emergency": 11,
+    "charity": 13,
+    "education": 2,
+    "animal": 4,
+    "environment": 8,
+    "business": 6,
     "community": 5,
+    "competition": 3,
+    "creative": 7,
+    "event": 10,
+    "faith": 12,
+    "family": 9,
+    "sports": 14,
+    "travel": 16,
+    "volunteer": 18,
+    "wishes": 17,
 }
 
 ATTRIBUTES = (
