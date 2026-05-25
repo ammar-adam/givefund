@@ -1,64 +1,70 @@
 # GiveFund — Production Deployment
 
+## One-click API (Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ammar-adam/givefund)
+
+Uses root [`render.yaml`](render.yaml). On first boot, `scripts/start_prod.sh` scrapes GoFundMe + LaunchGood if the DB has fewer than 50 campaigns.
+
+After deploy, copy your service URL (e.g. `https://givefund-api.onrender.com`).
+
+## Frontend (Netlify)
+
+1. [Import repo](https://app.netlify.com/start) → pick `ammar-adam/givefund`
+2. Build settings (from `netlify.toml`): base `frontend`, publish `.`
+3. Environment variable:
+   ```
+   GIVEFUND_API_URL=https://YOUR-RENDER-SERVICE.onrender.com
+   ```
+4. Deploy
+
 ## Architecture
 
 | Component | Host | Notes |
 |-----------|------|-------|
-| API + SQLite | [Render](https://render.com) | `backend/render.yaml`, disk at `/var/data/givefund.db` |
-| Frontend | [Netlify](https://netlify.com) | `netlify.toml`, set `GIVEFUND_API_URL` |
-| Scraper | GitHub Actions + Render boot | Daily workflow + scrape on deploy if DB sparse |
+| API + SQLite | Render | Persistent disk `/var/data/givefund.db` |
+| Frontend | Netlify | `GIVEFUND_API_URL` → Render API |
+| Scraper | Render boot + GitHub Actions | ~1000+ GoFundMe via Algolia pagination |
 
-## 1. Deploy API (Render)
+## Data refresh
 
-1. Connect repo `ammar-adam/givefund` on Render.
-2. Use blueprint `backend/render.yaml` or create a **Web Service**:
-   - Root directory: `backend`
-   - Build: `pip install -r requirements.txt && pip install -r ../scraper/requirements.txt && playwright install chromium`
-   - Start: `bash ../scripts/start_prod.sh`
-   - Add disk: 1GB at `/var/data`
-   - Env: `DB_PATH=/var/data/givefund.db`
-3. Optional: `DB_DOWNLOAD_URL` — HTTPS URL to a `givefund.db` file (e.g. from GitHub Actions artifact hosting).
-4. Note the service URL, e.g. `https://givefund-api.onrender.com`.
+**Automatic on Render:** set `SCRAPE_ON_START=true` (default). Re-deploy to re-scrape if needed.
 
-On first deploy, `start_prod.sh` runs GoFundMe + LaunchGood scrapers if fewer than 10 campaigns exist.
+**Daily GitHub Actions:**
 
-## 2. Deploy frontend (Netlify)
+- [`scrape.yml`](.github/workflows/scrape.yml) — 06:00 UTC, uploads `givefund.db` artifact
+- [`publish-db.yml`](.github/workflows/publish-db.yml) — pushes DB to `data` branch
 
-1. New site from Git, base directory `frontend` (or use repo root with `netlify.toml`).
-2. Set environment variable:
-   ```
-   GIVEFUND_API_URL=https://givefund-api.onrender.com
-   ```
-3. Build command (from `netlify.toml`) writes `config.js` with that URL.
-4. Deploy — donors hit Netlify; API calls go to Render.
+**Pull DB on startup without scraping:**
 
-## 3. Keep data fresh
+Set on Render:
 
-**GitHub Actions** (`.github/workflows/scrape.yml`):
-
-- Runs daily at 06:00 UTC and on manual dispatch.
-- Uploads `givefund.db` artifact (14-day retention).
-- Download artifact after a run and set `DB_DOWNLOAD_URL` on Render, or copy to disk manually.
-
-**On-server scheduler** (optional VM):
-
-```bash
-cd scraper && python scheduler.py
+```
+DB_DOWNLOAD_URL=https://raw.githubusercontent.com/ammar-adam/givefund/data/data/givefund.db
+SKIP_DB_DOWNLOAD=false
+SCRAPE_ON_START=false
 ```
 
-## 4. Fundly status
+(First `data` branch publish happens after the first successful daily scrape workflow.)
 
-`fundly.com/explore` redirects to SignUpGenius — no public listing. Fundly is skipped until a stable URL exists. GoFundMe (Algolia) and LaunchGood are production sources.
+## Scraper scale (verified)
 
-## 5. Verify production
+| Platform | Method | Typical yield |
+|----------|--------|---------------|
+| GoFundMe | Algolia pagination (50/page × 5 pages × 4 categories) | **~1000+** unique |
+| LaunchGood | Discover + page enrichment | **~18–50** |
+| Fundly | No public listing (redirect) | skipped |
+
+## Verify production
 
 ```bash
 curl https://YOUR-API.onrender.com/health
+curl "https://YOUR-API.onrender.com/stats"
 curl "https://YOUR-API.onrender.com/campaigns?page_size=3"
 ```
 
-Open Netlify URL — stats bar should show live counts, not the mock banner.
+Open Netlify URL — stats bar shows live totals; mock banner should not appear.
 
-## 6. CI
+## CI
 
-Every push runs `backend/tests` via `.github/workflows/ci.yml`.
+Every push runs [`ci.yml`](.github/workflows/ci.yml) (API contract tests).

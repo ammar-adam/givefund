@@ -1,6 +1,5 @@
-# Render blueprint — API with persistent SQLite on disk.
-# Set GIVEFUND_API_URL on Netlify to the deployed service URL.
-# Optional: DB_DOWNLOAD_URL to pull a pre-built database on startup.
+# Prefer root render.yaml for Blueprint deploy.
+# This file mirrors the web service definition for reference.
 
 services:
   - type: web

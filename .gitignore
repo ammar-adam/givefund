@@ -2,6 +2,7 @@
 givefund.db
 givefund-test.db
 scraper/probe_*.py
+scraper/test_*.py
 __pycache__/
 *.pyc
 .playwright/
