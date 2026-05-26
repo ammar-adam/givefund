@@ -9,7 +9,7 @@
 
 | Tier | Platforms | Scraper status | Notes |
 |------|-----------|----------------|-------|
-| **A — Implemented** | LaunchGood, Islamic Relief CA, Ketto, M-Changa, BackaBuddy, Give.asia, Thundafund | Wired in `scraper/platforms/` | Discover scraper or dedicated module |
+| **A — Implemented** | LaunchGood, Islamic Relief CA, Ketto, M-Changa, BackaBuddy, Give.asia, Thundafund, Milaap | Wired in `scraper/platforms/` | Dedicated scrapers where needed (BackaBuddy, Ketto, IRC) |
 | **B — API / key** | GlobalGiving | `globalgiving.py` needs `GLOBALGIVING_API_KEY` | Official REST API, 10 projects/page |
 | **C — Org appeals (not P2P index)** | Islamic Relief Worldwide, IRUSA iRaise | Not scraped as campaigns | Charity appeals, not peer fundraiser listings |
 | **D — Blocked / hard** | PayPal Giving, Facebook fundraisers, WhatsApp collections | Skip | No public index, ToS risk |
@@ -140,7 +140,8 @@
 | 1 | Desk research + platform matrix | This document |
 | 2 | Implement IRC, Ketto, M-Changa, BackaBuddy, Give.asia, Thundafund | `extra.py` + `islamicrelief.py` |
 | 3 | Wire registry, scrape loop, CI note | `__init__.py`, `scrape_loop.py` |
-| 4 | Live probe (post-deploy) | Update yield table in `PRODUCTION.md` |
+| 4 | Live probe (May 2026 local) | BackaBuddy **8**, Islamic Relief CA **11**, LaunchGood/Ketto blocked on some networks |
+| 5 | BackaBuddy HTML regex fix | Campaign paths in SPA shell, not `<a href>` |
 
 ---
 

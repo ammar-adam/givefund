@@ -12,7 +12,10 @@ from platforms.base import PAGES_PER_CATEGORY, new_scrape_page, page_delay, pars
 
 logger = logging.getLogger(__name__)
 
-DISCOVER_URL = "https://www.launchgood.com/discover"
+DISCOVER_URLS = (
+    "https://www.launchgood.com/discover",
+    "https://www.launchgood.com/explore",
+)
 MAX_ENRICH = 50  # cap per run to stay polite and fast
 
 
@@ -96,9 +99,20 @@ async def scrape_launchgood() -> list[dict]:
         browser = await pw.chromium.launch(headless=True)
         list_page = await new_scrape_page(browser)
         try:
-            logger.info("[launchgood] %s", DISCOVER_URL)
-            await list_page.goto(DISCOVER_URL, wait_until="domcontentloaded", timeout=60_000)
-            urls = await _discover_links(list_page)
+            urls: list[str] = []
+            for discover_url in DISCOVER_URLS:
+                logger.info("[launchgood] %s", discover_url)
+                try:
+                    await list_page.goto(
+                        discover_url, wait_until="commit", timeout=120_000
+                    )
+                    await list_page.wait_for_timeout(3000)
+                    found = await _discover_links(list_page)
+                    urls.extend(found)
+                    logger.info("[launchgood] %s → %d urls", discover_url, len(found))
+                except Exception as exc:
+                    logger.error("[launchgood] discover failed %s: %s", discover_url, exc)
+            urls = list(dict.fromkeys(urls))
             logger.info("[launchgood] found %d campaign urls", len(urls))
         finally:
             await list_page.close()

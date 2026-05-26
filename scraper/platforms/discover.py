@@ -111,6 +111,18 @@ async def scrape_discover(config: DiscoverConfig) -> list[dict]:
                     continue
 
                 hrefs: set[str] = set()
+                try:
+                    anchor_hrefs = await page.eval_on_selector_all(
+                        "a[href]",
+                        "els => els.map(e => e.href)",
+                    )
+                    for raw in anchor_hrefs:
+                        norm = _normalize_url(raw, config.base_url)
+                        if norm and any(m in norm for m in config.link_markers):
+                            hrefs.add(norm)
+                except Exception:
+                    pass
+
                 html = await page.content()
                 for marker in config.link_markers:
                     pattern = rf'href="([^"]*{re.escape(marker)}[^"]*)"'

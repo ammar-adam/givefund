@@ -6,6 +6,7 @@ PLATFORM_CATALOG: list[dict[str, str]] = [
     {"id": "fundly", "label": "Fundly"},
     {"id": "islamicrelief_ca", "label": "Islamic Relief (Canada)"},
     {"id": "ketto", "label": "Ketto (India)"},
+    {"id": "milaap", "label": "Milaap (India)"},
     {"id": "mchanga", "label": "M-Changa (Africa)"},
     {"id": "backabuddy", "label": "BackaBuddy (South Africa)"},
     {"id": "giveasia", "label": "Give.asia (Southeast Asia)"},

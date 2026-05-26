@@ -42,9 +42,12 @@
 | Area | Status | Finding |
 |------|--------|---------|
 | Scraper registry | ✅ | All platforms wired |
-| Discover scrapers | ⚠️ | Fragile (DOM); need live yield metrics post-scrape |
-| Islamic Relief CA | ⚠️ | Playwright-dependent; verify campaign URL shape in prod |
-| GlobalGiving | ⚠️ | Blocked until API key registered |
+| Discover scrapers | ⚠️ | Fragile (DOM); BackaBuddy fixed via HTML path regex (8+ campaigns) |
+| Islamic Relief CA | ⚠️ | Playwright + API JSON capture; verify URL slugs |
+| GlobalGiving | ✅ | HTML discover fallback when API key missing |
+| BackaBuddy | ✅ | Dedicated `backabuddy.py` (regex on rendered HTML) |
+| Ketto | ⚠️ | Often blocked locally; run on GHA |
+| LaunchGood | ⚠️ | Network timeouts locally; 120s timeout + `/explore` fallback |
 | Background ingest | ✅ | `scrape_loop.py` available |
 | CI | ⚠️ | Still 2-platform daily job — expand or use artifact DB sync |
 | Frontend catalog sync | ✅ | 18-entry fallback + `/platforms/catalog` API sync |

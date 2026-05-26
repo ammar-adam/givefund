@@ -71,17 +71,32 @@ def _project_to_campaign(project: dict[str, Any]) -> dict:
     }
 
 
+async def _scrape_html_fallback() -> list[dict]:
+    """Discover projects from public listing when API key is missing."""
+
+    from platforms.discover import DiscoverConfig, scrape_discover
+
+    cfg = DiscoverConfig(
+        platform=PLATFORM,
+        base_url="https://www.globalgiving.org",
+        start_urls=("https://www.globalgiving.org/projects/",),
+        link_markers=("/projects/",),
+        card_selectors=("a[href*='/projects/']", "article"),
+        max_campaigns=40,
+    )
+    return await scrape_discover(cfg)
+
+
 async def scrape_globalgiving(max_pages: int = 50) -> list[dict]:
     """Paginate active projects (10 per page) until max_pages or no more results."""
 
     api_key = os.getenv("GLOBALGIVING_API_KEY", "").strip()
     if not api_key:
         logger.warning(
-            "[%s] GLOBALGIVING_API_KEY not set — skipping API scrape "
-            "(register at globalgiving.org/api)",
+            "[%s] GLOBALGIVING_API_KEY not set — using HTML discover fallback",
             PLATFORM,
         )
-        return []
+        return await _scrape_html_fallback()
 
     campaigns: list[dict] = []
     next_id: str | None = None
@@ -129,6 +144,14 @@ async def scrape_globalgiving(max_pages: int = 50) -> list[dict]:
             )
             if not has_more or not next_id:
                 break
+
+    if len(campaigns) < 5:
+        logger.info("[%s] API sparse — trying HTML fallback", PLATFORM)
+        seen = {c["campaign_url"] for c in campaigns}
+        for row in await _scrape_html_fallback():
+            if row["campaign_url"] not in seen:
+                campaigns.append(row)
+                seen.add(row["campaign_url"])
 
     logger.info("[%s] total campaigns: %d", PLATFORM, len(campaigns))
     return campaigns

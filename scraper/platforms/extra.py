@@ -41,14 +41,11 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         link_markers=("/campaigns/", "/project/"),
     ),
     DiscoverConfig(
-        platform="ketto",
-        base_url="https://www.ketto.org",
-        start_urls=(
-            "https://www.ketto.org/crowdfunding/fundraisers",
-            "https://www.ketto.org/medical-fundraising",
-        ),
-        link_markers=("/fundraiser/", "/crowdfunding/"),
-        max_campaigns=40,
+        platform="milaap",
+        base_url="https://milaap.org",
+        start_urls=("https://milaap.org/fundraisers", "https://milaap.org/"),
+        link_markers=("/fundraisers/", "/fundraiser/"),
+        max_campaigns=35,
     ),
     DiscoverConfig(
         platform="mchanga",
@@ -56,13 +53,6 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         start_urls=("https://www.mchanga.africa/", "https://www.mchanga.africa/explore"),
         link_markers=("/fundraiser/", "/campaign/", "/f/"),
         max_campaigns=35,
-    ),
-    DiscoverConfig(
-        platform="backabuddy",
-        base_url="https://www.backabuddy.co.za",
-        start_urls=("https://www.backabuddy.co.za/", "https://www.backabuddy.co.za/campaigns"),
-        link_markers=("/campaign/", "/buddy/", "/project/"),
-        max_campaigns=40,
     ),
     DiscoverConfig(
         platform="giveasia",
