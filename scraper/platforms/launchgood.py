@@ -97,7 +97,7 @@ async def scrape_launchgood() -> list[dict]:
         list_page = await new_scrape_page(browser)
         try:
             logger.info("[launchgood] %s", DISCOVER_URL)
-            await list_page.goto(DISCOVER_URL, wait_until="networkidle", timeout=60_000)
+            await list_page.goto(DISCOVER_URL, wait_until="domcontentloaded", timeout=60_000)
             urls = await _discover_links(list_page)
             logger.info("[launchgood] found %d campaign urls", len(urls))
         finally:
