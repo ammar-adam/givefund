@@ -1060,6 +1060,12 @@
       { id: "gofundme", label: "GoFundMe" },
       { id: "launchgood", label: "LaunchGood" },
       { id: "fundly", label: "Fundly" },
+      { id: "islamicrelief_ca", label: "Islamic Relief (Canada)" },
+      { id: "ketto", label: "Ketto (India)" },
+      { id: "mchanga", label: "M-Changa (Africa)" },
+      { id: "backabuddy", label: "BackaBuddy (South Africa)" },
+      { id: "giveasia", label: "Give.asia" },
+      { id: "thundafund", label: "Thundafund" },
       { id: "justgiving", label: "JustGiving" },
       { id: "gogetfunding", label: "GoGetFunding" },
       { id: "givebutter", label: "Givebutter" },
@@ -1333,6 +1339,9 @@
           const data = await res.json();
           if (data.platforms?.length) {
             state.catalog = data.platforms;
+            for (const p of state.catalog) {
+              PLATFORM_LABELS[p.id] = p.label;
+            }
           }
         }
       } catch {

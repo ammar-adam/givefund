@@ -30,6 +30,29 @@ jobs:
         env:
           DB_PATH: ${{ github.workspace }}/givefund.db
 
+      - name: Run Islamic Relief CA scraper
+        run: cd scraper && python main.py --platform islamicrelief_ca
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund.db
+        continue-on-error: true
+
+      - name: Run discover scrapers (subset)
+        run: |
+          cd scraper
+          for p in ketto backabuddy giveasia; do
+            python main.py --platform "$p" || true
+          done
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund.db
+
+      - name: Run GlobalGiving API scraper
+        if: ${{ secrets.GLOBALGIVING_API_KEY != '' }}
+        run: cd scraper && python main.py --platform globalgiving
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund.db
+          GLOBALGIVING_API_KEY: ${{ secrets.GLOBALGIVING_API_KEY }}
+        continue-on-error: true
+
       - name: Report row count
         run: sqlite3 givefund.db "SELECT platform, COUNT(*) FROM campaigns GROUP BY platform;"
 

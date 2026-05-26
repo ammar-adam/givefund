@@ -45,9 +45,16 @@ Same env var; see `netlify.toml` if you prefer Netlify over Vercel.
 
 | Platform | Method | Typical yield |
 |----------|--------|---------------|
-| GoFundMe | Algolia pagination (50/page × 5 pages × 4 categories) | **~1000+** unique |
+| GoFundMe | Algolia pagination | **~4000+** unique |
 | LaunchGood | Discover + page enrichment | **~18–50** |
+| Islamic Relief CA | Leaderboard (Playwright) | **~20–80** |
+| Ketto / BackaBuddy / Give.asia / M-Changa / Thundafund | Discover scraper | **varies** (0–40 each run) |
+| GlobalGiving | REST API (`GLOBALGIVING_API_KEY`) | **100+** when keyed |
 | Fundly | No public listing (redirect) | skipped |
+
+**Continuous scrape:** `python scripts/scrape_loop.py` (2h interval) or `--once` for a full cycle.
+
+See `SCRAPER_RESEARCH_GLOBAL.md` and `PRODUCTION_QA.md`.
 
 ## Verify production
 
