@@ -101,6 +101,14 @@ def test_campaigns_search(client):
     assert empty.json()["total"] == 0
 
 
+def test_platform_catalog(client):
+    catalog = client.get("/platforms/catalog").json()
+    assert catalog["count"] >= 10
+    ids = {p["id"] for p in catalog["platforms"]}
+    assert "gofundme" in ids
+    assert "justgiving" in ids
+
+
 def test_platforms_and_stats(client):
     """Aggregate endpoints return expected keys."""
     platforms = client.get("/platforms").json()
@@ -122,3 +130,31 @@ def test_invalid_page_returns_422(client):
     response = client.get("/campaigns", params={"page": 0})
     assert response.status_code == 422
     assert "detail" in response.json()
+
+
+def test_checkout_config(client):
+    """Checkout config reports Stripe availability."""
+    response = client.get("/checkout/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "enabled" in data
+    assert data["default_tip_cents"] == 500
+    assert data["min_tip_cents"] == 100
+
+
+def test_checkout_link_setup_requires_stripe(client):
+    """Link setup returns 503 when Stripe keys are absent."""
+    response = client.post(
+        "/checkout/link-setup",
+        json={"email": "donor@example.com", "amount_cents": 500},
+    )
+    assert response.status_code == 503
+
+
+def test_checkout_link_setup_invalid_email(client):
+    """Invalid email returns 422."""
+    response = client.post(
+        "/checkout/link-setup",
+        json={"email": "x", "amount_cents": 500},
+    )
+    assert response.status_code == 422

@@ -3,29 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GiveFund — Find campaigns across every platform</title>
+  <title>GiveFund — Crowdfunding discovery across every platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #F7F8FC;
+      --bg: #F7F3ED;
       --surface: #FFFFFF;
-      --text: #0F172A;
-      --muted: #64748B;
-      --muted-light: #94A3B8;
-      --border: #E2E8F0;
-      --border-soft: #F1F5F9;
-      --accent: #1D4ED8;
-      --accent-hover: #1E40AF;
-      --accent-soft: #EFF6FF;
-      --accent-muted: #DBEAFE;
+      --ink: #1C1917;
+      --muted: #78716C;
+      --muted-light: #A8A29E;
+      --border: #E8E2D9;
+      --border-soft: #EDE8E1;
+      --accent: #E8533A;
+      --accent-hover: #D44530;
+      --pill-bg: #EDE8E1;
+      --pill-selected: #1C1917;
+      --btn-dark: #1C1917;
+      --progress-bg: #E8E2D9;
+      --badge-bg: #F7F3ED;
+      --footer-bg: #1C1917;
+      --footer-text: #A8A29E;
       --serif: "Instrument Serif", Georgia, serif;
       --sans: "Inter", system-ui, sans-serif;
-      --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-      --shadow-md: 0 4px 24px rgba(15, 23, 42, 0.06);
-      --radius: 12px;
-      --radius-lg: 16px;
+      --shadow-sm: 0 1px 4px rgba(28, 25, 23, 0.06);
+      --shadow-md: 0 8px 28px rgba(28, 25, 23, 0.08);
+      --radius: 10px;
+      --radius-lg: 14px;
+      --radius-pill: 999px;
     }
 
     * { box-sizing: border-box; }
@@ -33,7 +39,7 @@
     body {
       margin: 0;
       background: var(--bg);
-      color: var(--text);
+      color: var(--ink);
       font-family: var(--sans);
       font-size: 15px;
       line-height: 1.6;
@@ -41,9 +47,7 @@
     }
 
     button, input, select { font: inherit; }
-
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    a { color: inherit; }
 
     .shell { min-height: 100vh; }
 
@@ -54,129 +58,325 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 32px;
-      background: rgba(255, 255, 255, 0.9);
+      gap: 24px;
+      padding: 18px 40px;
+      background: var(--surface);
       border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
+    }
+
+    .nav-left {
+      display: flex;
+      align-items: center;
+      gap: 32px;
     }
 
     .logo {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--text);
+      letter-spacing: -0.04em;
+      color: var(--ink);
     }
 
-    .nav-meta {
-      font-size: 13px;
-      color: var(--muted);
+    .nav-links {
+      display: flex;
+      gap: 24px;
+      font-size: 14px;
       font-weight: 500;
+      color: var(--muted);
     }
+
+    .nav-links a {
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--ink); }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 22px;
+      border-radius: var(--radius-pill);
+      background: var(--btn-dark);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+
+    .nav-cta:hover { background: var(--accent); }
 
     .hero {
-      padding: 56px 32px 40px;
-      max-width: 1120px;
+      position: relative;
+      overflow: hidden;
+      padding: 92px 40px 48px;
+      max-width: 1180px;
       margin: 0 auto;
+      text-align: center;
     }
 
-    .hero-eyebrow {
-      display: inline-block;
-      margin: 0 0 16px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      background:
+        linear-gradient(
+          180deg,
+          rgba(247, 243, 237, 0.82) 0%,
+          rgba(247, 243, 237, 0.94) 55%,
+          rgba(247, 243, 237, 0.98) 100%
+        ),
+        url("https://images.unsplash.com/photo-1469574969204-2a47ac65e970?auto=format&fit=crop&w=1800&q=80")
+        center 40% / cover no-repeat;
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      z-index: 1;
     }
 
     .hero h1 {
-      margin: 0 0 16px;
-      max-width: 720px;
+      margin: 0 auto 24px;
+      max-width: 820px;
       font-family: var(--serif);
-      font-size: clamp(40px, 6vw, 56px);
+      font-size: clamp(44px, 7vw, 72px);
       font-weight: 400;
-      line-height: 1.08;
-      letter-spacing: -0.02em;
-      color: var(--text);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+    }
+
+    .hero h1 em {
+      font-style: italic;
+      font-weight: 400;
     }
 
     .hero-lead {
-      margin: 0 0 32px;
-      max-width: 560px;
+      margin: 0 auto 36px;
+      max-width: 580px;
       font-size: 18px;
-      line-height: 1.55;
+      line-height: 1.6;
       color: var(--muted);
     }
 
-    .search-row {
+    .hero-actions {
       display: flex;
+      justify-content: center;
       gap: 12px;
-      max-width: 640px;
       flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: var(--radius-pill);
+      background: var(--btn-dark);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary:hover { background: var(--accent); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      padding: 14px 28px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .btn-ghost:hover { border-color: var(--ink); }
+
+    .search-wrap {
+      max-width: 560px;
+      margin: 0 auto;
     }
 
     .search-input {
-      flex: 1;
-      min-width: 220px;
-      height: 48px;
-      padding: 0 16px 0 44px;
+      width: 100%;
+      height: 52px;
+      padding: 0 20px 0 48px;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%2394A3B8' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='5'/%3E%3Cpath d='M12 12l4 4'/%3E%3C/svg%3E") no-repeat 14px center;
-      color: var(--text);
+      border-radius: var(--radius-pill);
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='none' stroke='%238A8A8A' stroke-width='2'%3E%3Ccircle cx='8' cy='8' r='5'/%3E%3Cpath d='M12 12l4 4'/%3E%3C/svg%3E") no-repeat 18px center;
+      color: var(--ink);
       font-size: 15px;
       box-shadow: var(--shadow-sm);
       outline: none;
     }
 
     .search-input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-muted);
+      border-color: var(--ink);
+      box-shadow: 0 0 0 3px rgba(18, 18, 18, 0.08);
     }
 
     .search-input::placeholder { color: var(--muted-light); }
 
+    .marquee-section {
+      padding: 32px 0 48px;
+      border-top: 1px solid var(--border-soft);
+      border-bottom: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+
+    .marquee-label {
+      text-align: center;
+      margin: 0 0 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted-light);
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 40px;
+      width: max-content;
+      animation: marquee 45s linear infinite;
+    }
+
+    .marquee-track:hover { animation-play-state: paused; }
+
+    @keyframes marquee {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .marquee-inner {
+      display: flex;
+      gap: 40px;
+    }
+
+    .platform-chip {
+      flex-shrink: 0;
+      padding: 10px 20px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    .capabilities {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 64px 40px;
+    }
+
+    .cap-card {
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .cap-card h3 {
+      margin: 0 0 10px;
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .cap-card p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+
     .metrics {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      max-width: 1120px;
+      gap: 20px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 0 32px 32px;
+      padding: 48px 40px 56px;
     }
 
     .metric {
-      padding: 20px 24px;
+      padding: 32px 36px;
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--surface);
       box-shadow: var(--shadow-sm);
+      text-align: center;
     }
 
     .metric-value {
       display: block;
-      font-size: 28px;
-      font-weight: 700;
+      font-family: var(--serif);
+      font-size: 40px;
+      font-weight: 400;
       letter-spacing: -0.03em;
-      color: var(--text);
-      line-height: 1.2;
+      line-height: 1.1;
+      color: var(--ink);
     }
 
     .metric-label {
       display: block;
-      margin-top: 4px;
-      font-size: 13px;
+      margin-top: 8px;
+      font-size: 11px;
       color: var(--muted);
-      font-weight: 500;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
     }
 
-    .main {
-      max-width: 1120px;
+    .feed-section {
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 8px 32px 80px;
+      padding: 16px 40px 80px;
+    }
+
+    .feed-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .feed-header h2 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .feed-header p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      max-width: 360px;
     }
 
     .toolbar {
@@ -188,9 +388,11 @@
     }
 
     .toolbar-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted-light);
       margin-right: 4px;
     }
 
@@ -202,9 +404,9 @@
     }
 
     .pill {
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      background: var(--surface);
+      border: 1px solid transparent;
+      border-radius: var(--radius-pill);
+      background: var(--pill-bg);
       color: var(--muted);
       cursor: pointer;
       font-size: 13px;
@@ -213,35 +415,30 @@
       transition: all 0.15s ease;
     }
 
-    .pill:hover {
-      border-color: var(--accent-muted);
-      color: var(--text);
-    }
+    .pill:hover { color: var(--ink); }
 
     .pill[aria-pressed="true"] {
-      background: var(--accent);
-      border-color: var(--accent);
+      background: var(--pill-selected);
+      border-color: var(--pill-selected);
       color: #fff;
     }
 
     .select-wrap select {
       appearance: none;
-      height: 38px;
+      height: 40px;
       padding: 0 36px 0 14px;
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748B' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
-      color: var(--text);
+      border-radius: var(--radius-pill);
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C5C5C' d='M2 4l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 12px center;
+      color: var(--ink);
       font-size: 13px;
       font-weight: 500;
       cursor: pointer;
-      box-shadow: var(--shadow-sm);
       outline: none;
     }
 
     .select-wrap select:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-muted);
+      border-color: var(--ink);
     }
 
     .filters-right {
@@ -253,45 +450,44 @@
     .feed {
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 20px;
     }
 
     .signal-card {
       display: grid;
-      grid-template-columns: 200px 1fr;
-      gap: 0;
+      grid-template-columns: 220px 1fr;
       overflow: hidden;
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
       background: var(--surface);
       box-shadow: var(--shadow-sm);
-      transition: box-shadow 0.2s ease, border-color 0.2s ease;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
     }
 
     .signal-card:hover {
-      border-color: var(--accent-muted);
       box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
     }
 
     .signal-media {
       position: relative;
       background: var(--border-soft);
-      min-height: 160px;
+      min-height: 168px;
     }
 
     .signal-media img {
       display: block;
       width: 100%;
       height: 100%;
-      min-height: 160px;
+      min-height: 168px;
       object-fit: cover;
     }
 
     .signal-body {
       display: flex;
       flex-direction: column;
-      padding: 22px 24px;
-      gap: 12px;
+      padding: 20px;
+      gap: 10px;
     }
 
     .signal-top {
@@ -304,28 +500,33 @@
     .signal-label {
       font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
-      color: var(--accent);
+      color: var(--muted);
     }
 
     .tag {
       padding: 4px 10px;
-      border-radius: 6px;
-      background: var(--border-soft);
-      color: var(--muted);
+      border-radius: var(--radius-pill);
+      background: var(--accent-soft);
+      color: var(--ink);
       font-size: 12px;
       font-weight: 600;
-      text-transform: capitalize;
+    }
+
+    .tag-platform {
+      background: var(--badge-bg);
+      border: 1px solid var(--border);
+      color: var(--muted);
     }
 
     .signal-title {
       margin: 0;
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 600;
-      letter-spacing: -0.02em;
-      line-height: 1.3;
-      color: var(--text);
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      color: var(--ink);
     }
 
     .signal-story {
@@ -334,33 +535,9 @@
       line-height: 1.55;
       color: var(--muted);
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
-    }
-
-    .why-block {
-      padding: 14px 16px;
-      border-radius: var(--radius);
-      background: var(--bg);
-      border: 1px solid var(--border-soft);
-    }
-
-    .why-block strong {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .why-block p {
-      margin: 0;
-      font-size: 13px;
-      color: var(--text);
-      line-height: 1.5;
     }
 
     .signal-footer {
@@ -370,26 +547,23 @@
       justify-content: space-between;
       gap: 16px;
       margin-top: auto;
-      padding-top: 4px;
+      padding-top: 8px;
     }
 
-    .funding-meta {
-      flex: 1;
-      min-width: 180px;
-    }
+    .funding-meta { flex: 1; min-width: 200px; }
 
     .progress-track {
-      height: 6px;
-      border-radius: 999px;
-      background: var(--border-soft);
+      height: 8px;
+      border-radius: 4px;
+      background: var(--progress-bg);
       overflow: hidden;
       margin-bottom: 8px;
     }
 
     .progress-fill {
       height: 100%;
-      border-radius: 999px;
-      background: linear-gradient(90deg, var(--accent) 0%, #3B82F6 100%);
+      border-radius: 4px;
+      background: var(--accent);
     }
 
     .funding-text {
@@ -398,34 +572,140 @@
       font-weight: 500;
     }
 
-    .funding-text strong {
-      color: var(--text);
-      font-weight: 600;
-    }
+    .funding-text strong { color: var(--ink); font-weight: 600; }
 
     .cta-button {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 11px 20px;
-      border-radius: var(--radius);
-      background: var(--accent);
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: var(--btn-dark);
       color: #fff;
       font-size: 14px;
       font-weight: 600;
       text-decoration: none;
       white-space: nowrap;
-      transition: background 0.15s ease;
+      transition: background 0.15s;
     }
 
-    .cta-button:hover {
-      background: var(--accent-hover);
-      text-decoration: none;
+    .cta-button:hover { background: var(--accent); text-decoration: none; }
+
+    .donate-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
     }
 
-    .cta-arrow {
-      font-size: 16px;
-      line-height: 1;
+    .donate-hint {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--muted);
+      text-align: right;
+      max-width: 220px;
+    }
+
+    .donate-hint-link {
+      color: var(--accent);
+      max-width: 240px;
+    }
+
+    .link-band {
+      max-width: 720px;
+      margin: 0 auto 48px;
+      padding: 36px 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .link-band h2 {
+      margin: 0 0 8px;
+      font-family: var(--serif);
+      font-size: clamp(26px, 4vw, 34px);
+      font-weight: 400;
+    }
+
+    .link-band h2 em { font-style: italic; }
+
+    .link-band-lead {
+      margin: 0 0 20px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .link-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    @media (max-width: 600px) {
+      .link-form { grid-template-columns: 1fr; }
+    }
+
+    .link-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .link-field input,
+    .link-field select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .link-tip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 12px;
+      align-items: center;
+    }
+
+    .link-form-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .link-form .btn-primary {
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .link-form .btn-primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .link-status {
+      margin: 12px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .link-status.error { color: var(--accent); }
+
+    .link-unconfigured {
+      padding: 14px 16px;
+      border-radius: 8px;
+      background: var(--pill-bg);
+      font-size: 13px;
+      color: var(--muted);
     }
 
     .skeleton-card {
@@ -434,7 +714,7 @@
       background: var(--surface);
       overflow: hidden;
       display: grid;
-      grid-template-columns: 200px 1fr;
+      grid-template-columns: 220px 1fr;
     }
 
     .skeleton-media {
@@ -443,7 +723,7 @@
     }
 
     .skeleton-body {
-      padding: 24px;
+      padding: 28px;
       display: grid;
       gap: 12px;
     }
@@ -467,16 +747,16 @@
     .banner {
       margin-bottom: 20px;
       padding: 14px 18px;
-      border: 1px solid #FDE68A;
+      border: 1px solid #E8D9A8;
       border-radius: var(--radius);
-      background: #FFFBEB;
-      color: #92400E;
+      background: #FFFBF0;
+      color: #6B5A1E;
       font-size: 14px;
       font-weight: 500;
     }
 
     .empty {
-      padding: 56px 24px;
+      padding: 64px 24px;
       text-align: center;
       border: 1px dashed var(--border);
       border-radius: var(--radius-lg);
@@ -485,24 +765,106 @@
       font-size: 16px;
     }
 
-    .footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 32px;
+    .cta-band {
+      margin: 0 40px 64px;
+      padding: 56px 48px;
+      border-radius: var(--radius-lg);
+      background: var(--footer-bg);
+      color: #fff;
       text-align: center;
-      background: var(--surface);
+      max-width: 1100px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .footer .logo { margin-bottom: 8px; }
-    .footer p { margin: 0; font-size: 14px; color: var(--muted); }
+    .cta-band h2 {
+      margin: 0 0 12px;
+      font-family: var(--serif);
+      font-size: clamp(32px, 5vw, 48px);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+
+    .cta-band h2 em { font-style: italic; }
+
+    .cta-band p {
+      margin: 0 auto 28px;
+      max-width: 480px;
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.72);
+      line-height: 1.55;
+    }
+
+    .cta-band .btn-primary {
+      background: #fff;
+      color: var(--ink);
+    }
+
+    .cta-band .btn-primary:hover { background: #f0f0f0; }
+
+    .faq {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 40px 80px;
+    }
+
+    .faq h2 {
+      margin: 0 0 28px;
+      font-family: var(--serif);
+      font-size: 32px;
+      font-weight: 400;
+      text-align: center;
+    }
+
+    .faq-item {
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
+    }
+
+    .faq-item:last-child { border-bottom: 1px solid var(--border); }
+
+    .faq-item strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .faq-item p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .footer {
+      border-top: none;
+      padding: 48px 40px;
+      text-align: center;
+      background: var(--footer-bg);
+    }
+
+    .footer .logo {
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .footer p { margin: 0; font-size: 14px; color: var(--footer-text); }
 
     .hidden { display: none !important; }
 
+    @media (max-width: 900px) {
+      .capabilities { grid-template-columns: 1fr; }
+    }
+
     @media (max-width: 768px) {
-      .nav, .hero, .metrics, .main { padding-left: 20px; padding-right: 20px; }
+      .nav { padding: 16px 20px; }
+      .nav-links { display: none; }
+      .hero, .metrics, .feed-section, .capabilities, .link-band, .faq, .cta-band { padding-left: 20px; padding-right: 20px; }
+      .link-band { margin-left: 20px; margin-right: 20px; }
+      .cta-band { margin-left: 20px; margin-right: 20px; }
       .metrics { grid-template-columns: 1fr; }
       .signal-card, .skeleton-card { grid-template-columns: 1fr; }
-      .signal-media { min-height: 180px; }
-      .nav-meta { display: none; }
+      .signal-media { min-height: 200px; }
       .toolbar { flex-direction: column; align-items: stretch; }
       .filters-right { width: 100%; }
       .select-wrap select { width: 100%; }
@@ -512,20 +874,54 @@
 <body>
   <div class="shell">
     <nav class="nav">
-      <span class="logo">GiveFund</span>
-      <span class="nav-meta">Every campaign. One place.</span>
+      <div class="nav-left">
+        <span class="logo">GiveFund</span>
+        <div class="nav-links">
+          <a href="#campaigns">Campaigns</a>
+          <a href="#platforms">Platforms</a>
+          <a href="#faster-giving">Faster giving</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+      <a class="nav-cta" href="#campaigns">Explore campaigns</a>
     </nav>
 
     <header class="hero">
-      <p class="hero-eyebrow">Crowdfunding discovery</p>
-      <h1>Find someone to help before the moment passes</h1>
-      <p class="hero-lead">
-        Most donors only see campaigns in their feed. GiveFund searches GoFundMe, LaunchGood, and more — so you can discover real people and give on the platform they chose.
-      </p>
-      <div class="search-row">
-        <input id="searchInput" class="search-input" type="search" placeholder="Search by name, cause, or story…" aria-label="Search campaigns">
+      <div class="hero-bg" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <h1><em>Find the help</em> someone needs — across every crowdfunding platform.</h1>
+        <p class="hero-lead">
+          GiveFund turns scattered campaigns into one searchable feed. Discover real people, sort by who needs you most, and give on the platform they chose.
+        </p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="#campaigns">See live campaigns</a>
+          <a class="btn-ghost" href="#platforms">12 platforms</a>
+        </div>
+        <div class="search-wrap">
+          <input id="searchInput" class="search-input" type="search" placeholder="Search by name, cause, or story…" aria-label="Search campaigns">
+        </div>
       </div>
     </header>
+
+    <section id="platforms" class="marquee-section" aria-label="Supported platforms">
+      <p class="marquee-label">Indexed from</p>
+      <div class="marquee-inner" id="marqueeA"></div>
+    </section>
+
+    <section class="capabilities" aria-label="Core capabilities">
+      <article class="cap-card">
+        <h3>One search</h3>
+        <p>GoFundMe, LaunchGood, JustGiving, Givebutter, and eight more — surfaced in a single, calm discovery experience.</p>
+      </article>
+      <article class="cap-card">
+        <h3>Most needed first</h3>
+        <p>Sort by funding gap or campaigns almost at goal. Spend your attention where it changes outcomes.</p>
+      </article>
+      <article class="cap-card">
+        <h3>Give on their platform</h3>
+        <p>No middleman fees. Every card links straight to the original fundraiser so donors land where trust already lives.</p>
+      </article>
+    </section>
 
     <section id="statsBar" class="metrics" aria-live="polite">
       <div class="metric">
@@ -534,21 +930,26 @@
       </div>
       <div class="metric">
         <span class="metric-value">—</span>
-        <span class="metric-label">Total raised</span>
+        <span class="metric-label">Total raised tracked</span>
       </div>
       <div class="metric">
-        <span class="metric-value">3</span>
-        <span class="metric-label">Platforms with data</span>
+        <span class="metric-value" id="platformCount">12</span>
+        <span class="metric-label">Platforms supported</span>
       </div>
     </section>
 
-    <main class="main">
+    <section id="campaigns" class="feed-section">
+      <div class="feed-header">
+        <h2>Live campaigns</h2>
+        <p>Updated from public listings. Filter by cause, platform, or how urgently funds are still needed.</p>
+      </div>
+
       <div id="mockBanner" class="banner hidden">
-        Showing sample campaigns — start the backend at localhost:8000 to see live data.
+        Showing sample campaigns — start the API at localhost:8000 for live data.
       </div>
 
       <div class="toolbar">
-        <span class="toolbar-label">Filter</span>
+        <span class="toolbar-label">Category</span>
         <div class="pills" role="group" aria-label="Category filters">
           <button class="pill" type="button" data-category="" aria-pressed="true">All</button>
           <button class="pill" type="button" data-category="medical" aria-pressed="false">Medical</button>
@@ -567,9 +968,6 @@
           <div class="select-wrap">
             <select id="platformSelect" aria-label="Filter by platform">
               <option value="">All platforms</option>
-              <option value="gofundme">GoFundMe</option>
-              <option value="launchgood">LaunchGood</option>
-              <option value="fundly">Fundly</option>
             </select>
           </div>
         </div>
@@ -577,109 +975,119 @@
 
       <div id="campaignGrid" class="feed"></div>
       <div id="emptyState" class="empty hidden">No campaigns found. Try a different search or filter.</div>
-    </main>
+    </section>
+
+    <section id="faster-giving" class="link-band" aria-labelledby="linkBandTitle">
+      <h2 id="linkBandTitle">Save your card once with <em>Stripe Link</em></h2>
+      <p class="link-band-lead">
+        Optional tip to support GiveFund (from $1). Checkout enrolls you in Stripe Link so many sites — including some GoFundMe and Givebutter flows — can autofill your card when you use the <strong>same email</strong>. Campaign gifts still complete on the original platform.
+      </p>
+      <div id="linkUnconfigured" class="link-unconfigured hidden">
+        Link setup is not enabled on this server yet. Add <code>STRIPE_SECRET_KEY</code> to the API environment to turn it on.
+      </div>
+      <form id="linkSetupForm" class="link-form hidden" novalidate>
+        <div class="link-field">
+          <label for="linkEmail">Email for Link</label>
+          <input id="linkEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
+        </div>
+        <div class="link-form-actions">
+          <div class="link-field">
+            <label for="linkAmount">Optional tip</label>
+            <select id="linkAmount" name="amount" aria-label="Tip amount">
+              <option value="100">$1 — save card only</option>
+              <option value="300">$3</option>
+              <option value="500" selected>$5</option>
+              <option value="1000">$10</option>
+              <option value="2500">$25</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary" id="linkSubmitBtn">Continue to secure checkout</button>
+        </div>
+      </form>
+      <p id="linkStatus" class="link-status hidden" role="status"></p>
+    </section>
+
+    <section class="cta-band">
+      <h2>Discovery that stays <em>open</em></h2>
+      <p>No accounts, no platform lock-in. GiveFund is a public index — you give where the campaign already lives.</p>
+      <a class="btn-primary" href="#campaigns">Browse campaigns</a>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>What is GiveFund?</h2>
+      <div class="faq-item">
+        <strong>Why does this exist?</strong>
+        <p>Most donors only see campaigns in one app or one feed. GiveFund aggregates public listings so you can find people to help before the moment passes.</p>
+      </div>
+      <div class="faq-item">
+        <strong>Which platforms do you support?</strong>
+        <p id="faqPlatforms">Twelve sources including GoFundMe, LaunchGood, JustGiving, Givebutter, GlobalGiving, Patreon, and more — with new discover scrapers added over time.</p>
+      </div>
+      <div class="faq-item">
+        <strong>Do you handle campaign payments?</strong>
+        <p>No. “Give now” always opens the original fundraiser on their platform. GiveFund never holds or routes money for campaigns.</p>
+      </div>
+      <div class="faq-item">
+        <strong>What is Stripe Link?</strong>
+        <p>Stripe Link is a secure wallet that saves your card with Stripe (not GiveFund). If you enroll via our optional checkout, use the <strong>same email</strong> when you donate on GoFundMe, Givebutter, Donorbox, or other Link-enabled checkouts — you may see Link and skip re-entering your card. LaunchGood and some GoFundMe paths do not support Link.</p>
+      </div>
+      <div class="faq-item">
+        <strong>Why the optional tip?</strong>
+        <p>It keeps discovery free and creates a real Stripe checkout so Link can save your payment details. You can choose $1 if you only want Link enrollment.</p>
+      </div>
+    </section>
 
     <footer class="footer">
       <div class="logo">GiveFund</div>
-      <p>Public service discovery — no accounts, no fees. Give on the original platform.</p>
+      <p>Public crowdfunding discovery — no accounts, no fees on our side.</p>
     </footer>
   </div>
 
   <script src="config.js"></script>
   <script>
     const API_URL = window.GIVEFUND_API_URL || "http://localhost:8000";
+    const FRONTEND_URL = (window.GIVEFUND_FRONTEND_URL || window.location.origin).replace(/\/$/, "");
+
+    /** Platforms where Stripe Link may appear at checkout (see BYPASS_RESEARCH.md). */
+    const LINK_FRIENDLY_PLATFORMS = new Set([
+      "gofundme",
+      "givebutter",
+      "donorbox",
+      "fundly"
+    ]);
+
+    const PLATFORM_CATALOG = [
+      { id: "gofundme", label: "GoFundMe" },
+      { id: "launchgood", label: "LaunchGood" },
+      { id: "fundly", label: "Fundly" },
+      { id: "justgiving", label: "JustGiving" },
+      { id: "gogetfunding", label: "GoGetFunding" },
+      { id: "givebutter", label: "Givebutter" },
+      { id: "mightycause", label: "Mightycause" },
+      { id: "chuffed", label: "Chuffed" },
+      { id: "fundrazr", label: "FundRazr" },
+      { id: "globalgiving", label: "GlobalGiving" },
+      { id: "donorbox", label: "Donorbox" },
+      { id: "patreon", label: "Patreon" }
+    ];
+
+    const PLATFORM_LABELS = Object.fromEntries(
+      PLATFORM_CATALOG.map((p) => [p.id, p.label])
+    );
 
     const MOCK_CAMPAIGNS = [
-      {
-        id: 1,
-        title: "Help Maria beat stage 3 breast cancer",
-        story_snippet: "Maria is a single mother of two facing months of chemo and lost wages while her family covers care and transport.",
-        photo_url: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=900&q=80",
-        goal_amount: 45000,
-        raised_amount: 12800,
-        funding_gap: 32200,
-        pct_funded: 28.4,
-        platform: "gofundme",
-        campaign_url: "https://www.gofundme.com/f/sample-maria-cancer",
-        category: "medical",
-        location: "Chicago, IL",
-        scraped_at: "2025-05-20T10:00:00"
-      },
-      {
-        id: 2,
-        title: "Tuition for Aisha's nursing degree",
-        story_snippet: "Aisha needs help covering her final semester before clinical placement begins this fall.",
-        photo_url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80",
-        goal_amount: 8500,
-        raised_amount: 7200,
-        funding_gap: 1300,
-        pct_funded: 84.7,
-        platform: "launchgood",
-        campaign_url: "https://www.launchgood.com/project/sample-aisha",
-        category: "education",
-        location: "Detroit, MI",
-        scraped_at: "2025-05-18T14:00:00"
-      },
-      {
-        id: 3,
-        title: "Rebuild after the apartment fire",
-        story_snippet: "Three families lost essentials and need deposits, clothing, and short-term housing after an electrical fire.",
-        photo_url: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=900&q=80",
-        goal_amount: 22000,
-        raised_amount: 9400,
-        funding_gap: 12600,
-        pct_funded: 42.7,
-        platform: "fundly",
-        campaign_url: "https://fundly.com/campaign/sample-fire-relief",
-        category: "emergency",
-        location: "Houston, TX",
-        scraped_at: "2025-05-17T09:00:00"
-      },
-      {
-        id: 4,
-        title: "Community garden for Riverside seniors",
-        story_snippet: "Neighbors are raising funds for raised beds, soil, and tools so seniors can grow food together.",
-        photo_url: "https://images.unsplash.com/photo-1416879595882-3373a0488b5b?auto=format&fit=crop&w=900&q=80",
-        goal_amount: 6000,
-        raised_amount: 4100,
-        funding_gap: 1900,
-        pct_funded: 68.3,
-        platform: "gofundme",
-        campaign_url: "https://www.gofundme.com/f/sample-garden",
-        category: "community",
-        location: "Portland, OR",
-        scraped_at: "2025-05-16T11:00:00"
-      },
-      {
-        id: 5,
-        title: "Surgery fund for baby Yusuf",
-        story_snippet: "Yusuf was born with a heart defect. His parents need help with surgery and recovery costs.",
-        photo_url: "https://images.unsplash.com/photo-1555252333-9f8e92a85df1?auto=format&fit=crop&w=900&q=80",
-        goal_amount: 35000,
-        raised_amount: 28900,
-        funding_gap: 6100,
-        pct_funded: 82.6,
-        platform: "launchgood",
-        campaign_url: "https://www.launchgood.com/project/sample-yusuf",
-        category: "medical",
-        location: "Dearborn, MI",
-        scraped_at: "2025-05-15T08:00:00"
-      },
-      {
-        id: 6,
-        title: "Scholarship for first-gen college student Daniel",
-        story_snippet: "Daniel was accepted to engineering school and needs help with books, housing, and a laptop.",
-        photo_url: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=900&q=80",
-        goal_amount: 12000,
-        raised_amount: 4800,
-        funding_gap: 7200,
-        pct_funded: 40,
-        platform: "fundly",
-        campaign_url: "https://fundly.com/campaign/sample-daniel",
-        category: "education",
-        location: "Atlanta, GA",
-        scraped_at: "2025-05-14T16:00:00"
-      }
+      { id: 1, title: "Help Maria beat stage 3 breast cancer", story_snippet: "Maria is a single mother of two facing months of chemo and lost wages.", photo_url: "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=900&q=80", goal_amount: 45000, raised_amount: 12800, funding_gap: 32200, pct_funded: 28.4, platform: "gofundme", campaign_url: "https://www.gofundme.com/f/sample-maria", category: "medical", location: "Chicago, IL", scraped_at: "2025-05-20T10:00:00" },
+      { id: 2, title: "Tuition for Aisha's nursing degree", story_snippet: "Aisha needs help covering her final semester before clinical placement.", photo_url: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&w=900&q=80", goal_amount: 8500, raised_amount: 7200, funding_gap: 1300, pct_funded: 84.7, platform: "launchgood", campaign_url: "https://www.launchgood.com/project/sample-aisha", category: "education", location: "Detroit, MI", scraped_at: "2025-05-18T14:00:00" },
+      { id: 3, title: "Marathon for Mind — mental health charity run", story_snippet: "James is running 26 miles to fund free counseling for teens.", photo_url: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50e?auto=format&fit=crop&w=900&q=80", goal_amount: 5000, raised_amount: 2100, funding_gap: 2900, pct_funded: 42, platform: "justgiving", campaign_url: "https://www.justgiving.com/fundraising/sample-mind", category: "community", location: "London, UK", scraped_at: "2025-05-17T09:00:00" },
+      { id: 4, title: "School supplies for Ms. Park's classroom", story_snippet: "A Title I classroom needs notebooks, art kits, and snacks.", photo_url: "https://images.unsplash.com/photo-1503676260728-1c00da094a0d?auto=format&fit=crop&w=900&q=80", goal_amount: 3200, raised_amount: 2900, funding_gap: 300, pct_funded: 90.6, platform: "givebutter", campaign_url: "https://givebutter.com/c/sample-ms-park", category: "education", location: "Oakland, CA", scraped_at: "2025-05-16T11:00:00" },
+      { id: 5, title: "Clean water wells in rural Kenya", story_snippet: "Two villages need drilled wells and maintenance training.", photo_url: "https://images.unsplash.com/photo-1538333300702-3eaa72f5d6c2?auto=format&fit=crop&w=900&q=80", goal_amount: 75000, raised_amount: 41200, funding_gap: 33800, pct_funded: 54.9, platform: "globalgiving", campaign_url: "https://www.globalgiving.org/projects/sample-water/", category: "community", location: "Kenya", scraped_at: "2025-05-15T08:00:00" },
+      { id: 6, title: "Podcast archive for oral histories", story_snippet: "Creators preserving elder interviews need hosting and transcription.", photo_url: "https://images.unsplash.com/photo-1478737270239-2f2b6a5c7c1e?auto=format&fit=crop&w=900&q=80", goal_amount: 2400, raised_amount: 1100, funding_gap: 1300, pct_funded: 45.8, platform: "patreon", campaign_url: "https://www.patreon.com/sample-oral-history", category: "education", location: "Remote", scraped_at: "2025-05-14T16:00:00" },
+      { id: 7, title: "Flood relief for rural clinic", story_snippet: "Weeks of rain destroyed supplies at a volunteer-run clinic.", photo_url: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773f?auto=format&fit=crop&w=900&q=80", goal_amount: 18000, raised_amount: 5600, funding_gap: 12400, pct_funded: 31.1, platform: "gogetfunding", campaign_url: "https://gogetfunding.com/fundraiser/sample-clinic", category: "emergency", location: "Louisiana", scraped_at: "2025-05-13T12:00:00" },
+      { id: 8, title: "Veteran service dog training fund", story_snippet: "Marcus needs help covering the final months of service-dog training.", photo_url: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&w=900&q=80", goal_amount: 9000, raised_amount: 6200, funding_gap: 2800, pct_funded: 68.9, platform: "mightycause", campaign_url: "https://www.mightycause.com/story/sample-veteran", category: "community", location: "San Antonio, TX", scraped_at: "2025-05-12T10:00:00" },
+      { id: 9, title: "Solar panels for the community center", story_snippet: "Neighbors crowdfunding panels to cut bills and fund youth programs.", photo_url: "https://images.unsplash.com/photo-1509391366360-2e959784a276?auto=format&fit=crop&w=900&q=80", goal_amount: 40000, raised_amount: 18500, funding_gap: 21500, pct_funded: 46.3, platform: "chuffed", campaign_url: "https://chuffed.org/project/sample-solar", category: "community", location: "Melbourne, AU", scraped_at: "2025-05-11T09:00:00" },
+      { id: 10, title: "Therapy fund for trans youth shelter", story_snippet: "A shelter raising support for on-site counseling and crisis intake.", photo_url: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&w=900&q=80", goal_amount: 12000, raised_amount: 7800, funding_gap: 4200, pct_funded: 65, platform: "donorbox", campaign_url: "https://donorbox.org/sample-youth", category: "medical", location: "Seattle, WA", scraped_at: "2025-05-10T08:00:00" },
+      { id: 11, title: "Independent film about housing justice", story_snippet: "A documentary crew needs finishing funds for editing and festivals.", photo_url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=80", goal_amount: 15000, raised_amount: 9100, funding_gap: 5900, pct_funded: 60.7, platform: "fundrazr", campaign_url: "https://fundrazr.com/campaigns/sample-film", category: "community", location: "Brooklyn, NY", scraped_at: "2025-05-09T07:00:00" },
+      { id: 12, title: "Rebuild after the apartment fire", story_snippet: "Three families need deposits, clothing, and short-term housing.", photo_url: "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=900&q=80", goal_amount: 22000, raised_amount: 9400, funding_gap: 12600, pct_funded: 42.7, platform: "fundly", campaign_url: "https://fundly.com/campaign/sample-fire", category: "emergency", location: "Houston, TX", scraped_at: "2025-05-08T06:00:00" }
     ];
 
     const state = {
@@ -688,7 +1096,8 @@
       platform: "",
       search: "",
       sortBy: "most_needed",
-      usingMock: false
+      usingMock: false,
+      catalog: PLATFORM_CATALOG
     };
 
     const $ = (sel) => document.querySelector(sel);
@@ -701,6 +1110,177 @@
         .replaceAll('"', "&quot;");
     }
 
+    function platformLabel(id) {
+      return PLATFORM_LABELS[id] || id;
+    }
+
+    /** Normalize ALL-CAPS GoFundMe snippets to sentence case (first 300 chars). */
+    function formatStorySnippet(snippet) {
+      if (!snippet) return "";
+      const text = snippet.slice(0, 300);
+      const letters = text.replace(/[^a-zA-Z]/g, "");
+      const isAllCaps = letters.length > 8 && letters === letters.toUpperCase();
+      if (!isAllCaps) {
+        return text.charAt(0).toUpperCase() + text.slice(1);
+      }
+      const lower = text.toLowerCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    }
+
+    function progressOpacity(pct) {
+      if (pct > 75) return 1;
+      if (pct > 40) return 0.7;
+      return 0.45;
+    }
+
+    async function fetchPlatformCount() {
+      try {
+        const res = await fetch(`${API_URL}/platforms`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.platforms?.length) return data.platforms.length;
+        }
+      } catch {
+        /* fall through */
+      }
+      return new Set(MOCK_CAMPAIGNS.map((c) => c.platform)).size;
+    }
+
+    function appendReferralUtm(urlString, campaign) {
+      try {
+        const url = new URL(urlString);
+        url.searchParams.set("utm_source", "givefund");
+        url.searchParams.set("utm_medium", "referral");
+        url.searchParams.set("utm_campaign", campaign?.platform || "discover");
+        if (campaign?.id != null) {
+          url.searchParams.set("utm_content", String(campaign.id));
+        }
+        return url.toString();
+      } catch {
+        return urlString;
+      }
+    }
+
+    /**
+     * Build the lowest-friction donate URL for a campaign.
+     * GoFundMe and LaunchGood use /donate subpages; others fall back to campaign_url.
+     * Appends UTM params for partnership analytics.
+     */
+    function buildDonateUrl(campaign) {
+      const fallback = campaign.campaign_url || "#";
+      if (!fallback || fallback === "#") return fallback;
+
+      const platform = String(campaign.platform || "").toLowerCase();
+      let target = fallback;
+
+      try {
+        const parsed = new URL(fallback);
+        const parts = parsed.pathname.split("/").filter(Boolean);
+
+        if (platform === "gofundme") {
+          const fIdx = parts.indexOf("f");
+          if (fIdx >= 0 && parts[fIdx + 1]) {
+            const slug = parts[fIdx + 1].split("?")[0];
+            if (slug && slug !== "donate") {
+              target = `https://www.gofundme.com/f/${slug}/donate`;
+            }
+          }
+        }
+
+        if (platform === "launchgood") {
+          let slug = null;
+          if (parts[0] === "v4" && parts[1] === "campaign" && parts[2]) {
+            slug = parts[2].split("?")[0];
+          } else if (parts[0] === "project" && parts[1]) {
+            slug = parts[1].split("?")[0];
+          } else {
+            const campaignIdx = parts.indexOf("campaign");
+            if (campaignIdx >= 0 && parts[campaignIdx + 1]) {
+              slug = parts[campaignIdx + 1].split("?")[0];
+            }
+          }
+          if (slug && slug !== "donate") {
+            target = `https://www.launchgood.com/v4/campaign/${slug}/donate`;
+          }
+        }
+      } catch {
+        return appendReferralUtm(fallback, campaign);
+      }
+
+      return appendReferralUtm(target, campaign);
+    }
+
+    function setLinkStatus(message, isError) {
+      const el = $("#linkStatus");
+      if (!message) {
+        el.classList.add("hidden");
+        el.textContent = "";
+        return;
+      }
+      el.textContent = message;
+      el.classList.toggle("error", Boolean(isError));
+      el.classList.remove("hidden");
+    }
+
+    async function initLinkSetup() {
+      const form = $("#linkSetupForm");
+      const unconfigured = $("#linkUnconfigured");
+      const savedEmail = localStorage.getItem("givefund_donor_email");
+      if (savedEmail) $("#linkEmail").value = savedEmail;
+
+      let enabled = false;
+      try {
+        const res = await fetch(`${API_URL}/checkout/config`);
+        if (res.ok) {
+          const data = await res.json();
+          enabled = Boolean(data.enabled);
+        }
+      } catch {
+        /* API offline */
+      }
+
+      if (enabled) {
+        form.classList.remove("hidden");
+        unconfigured.classList.add("hidden");
+      } else {
+        form.classList.add("hidden");
+        unconfigured.classList.remove("hidden");
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!enabled) return;
+
+        const email = $("#linkEmail").value.trim();
+        const amountCents = parseInt($("#linkAmount").value, 10) || 500;
+        const btn = $("#linkSubmitBtn");
+        btn.disabled = true;
+        setLinkStatus("Redirecting to secure checkout…", false);
+
+        try {
+          const res = await fetch(`${API_URL}/checkout/link-setup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              amount_cents: amountCents,
+              success_url: `${FRONTEND_URL}/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
+              cancel_url: `${FRONTEND_URL}/#faster-giving`
+            })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.detail || `Checkout failed (${res.status})`);
+          }
+          localStorage.setItem("givefund_donor_email", email);
+          window.location.href = data.url;
+        } catch (err) {
+          setLinkStatus(err.message || "Could not start checkout.", true);
+          btn.disabled = false;
+        }
+      });
+    }
+
     function formatMoney(amount) {
       return new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -709,18 +1289,60 @@
       }).format(amount || 0);
     }
 
-    function formatCompact(n) {
-      if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
-      if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
-      return String(n);
-    }
-
     function debounce(fn, ms) {
       let t;
       return (...args) => {
         clearTimeout(t);
         t = setTimeout(() => fn(...args), ms);
       };
+    }
+
+    function buildMarquee() {
+      const chips = state.catalog.map((p) =>
+        `<span class="platform-chip">${escapeHtml(p.label)}</span>`
+      ).join("");
+      const track = `<div class="marquee-track"><div class="marquee-inner">${chips}</div><div class="marquee-inner" aria-hidden="true">${chips}</div></div>`;
+      const section = document.getElementById("platforms");
+      const label = section.querySelector(".marquee-label");
+      section.innerHTML = "";
+      section.appendChild(label);
+      const wrap = document.createElement("div");
+      wrap.innerHTML = track;
+      section.appendChild(wrap.firstElementChild);
+    }
+
+    function populatePlatformSelect() {
+      const select = $("#platformSelect");
+      const current = select.value;
+      select.innerHTML = '<option value="">All platforms</option>';
+      for (const p of state.catalog) {
+        const opt = document.createElement("option");
+        opt.value = p.id;
+        opt.textContent = p.label;
+        select.appendChild(opt);
+      }
+      if ([...select.options].some((o) => o.value === current)) {
+        select.value = current;
+      }
+    }
+
+    async function loadCatalog() {
+      try {
+        const res = await fetch(`${API_URL}/platforms/catalog`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.platforms?.length) {
+            state.catalog = data.platforms;
+          }
+        }
+      } catch {
+        /* use static catalog */
+      }
+      buildMarquee();
+      populatePlatformSelect();
+      const names = state.catalog.map((p) => p.label).join(", ");
+      $("#faqPlatforms").textContent =
+        `${state.catalog.length} sources including ${names} — with discover scrapers added over time.`;
     }
 
     function buildCampaignUrl() {
@@ -778,27 +1400,15 @@
       $("#emptyState").classList.add("hidden");
     }
 
-    function fundingDisplay(c) {
-      const raised = c.raised_amount;
-      const goal = c.goal_amount;
-      const pct = Math.max(0, Math.min(c.pct_funded || 0, 100));
-      if (goal != null && goal > 0 && raised != null) {
-        return {
-          pct,
-          text: `<strong>${formatMoney(raised)}</strong> raised of ${formatMoney(goal)} goal · ${Math.round(pct)}% funded`
-        };
-      }
-      if (raised != null && raised > 0) {
-        return { pct: 0, text: `<strong>${formatMoney(raised)}</strong> raised` };
-      }
-      return { pct: 0, text: "See platform for funding details" };
-    }
-
     function renderCard(c) {
-      const funding = fundingDisplay(c);
-      const photo = c.photo_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23F1F5F9' width='400' height='240'/%3E%3C/svg%3E";
+      const pct = Math.max(0, Math.min(c.pct_funded || 0, 100));
+      const photo = c.photo_url || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='240'%3E%3Crect fill='%23F0EEEA' width='400' height='240'/%3E%3C/svg%3E";
       const location = c.location ? `<span class="tag">${escapeHtml(c.location)}</span>` : "";
-      const whyText = c.story_snippet || "Open the campaign to read their full story and donate on the original platform.";
+      const plat = platformLabel(c.platform);
+      const donateUrl = buildDonateUrl(c);
+      const linkHint = LINK_FRIENDLY_PLATFORMS.has(String(c.platform || "").toLowerCase())
+        ? `<p class="donate-hint donate-hint-link">Same email → Stripe Link may autofill on ${escapeHtml(plat)}</p>`
+        : "";
 
       return `
         <article class="signal-card">
@@ -808,25 +1418,28 @@
           <div class="signal-body">
             <div class="signal-top">
               <span class="signal-label">${escapeHtml(categoryLabel(c.category))}</span>
-              <span class="tag">${escapeHtml(c.platform)}</span>
+              <span class="tag tag-platform">${escapeHtml(plat)}</span>
               ${location}
             </div>
             <h2 class="signal-title">${escapeHtml(c.title)}</h2>
-            <p class="signal-story">${escapeHtml(c.story_snippet)}</p>
-            <div class="why-block">
-              <strong>Why it matters</strong>
-              <p>${escapeHtml(whyText)}</p>
-            </div>
+            <p class="signal-story story-snippet">${escapeHtml(formatStorySnippet(c.story_snippet))}</p>
             <div class="signal-footer">
               <div class="funding-meta">
                 <div class="progress-track" aria-hidden="true">
-                  <div class="progress-fill" style="width:${funding.pct}%"></div>
+                  <div class="progress-fill" style="width:${pct}%;opacity:${progressOpacity(pct)}"></div>
                 </div>
-                <p class="funding-text">${funding.text}</p>
+                <p class="funding-text">
+                  <strong>${formatMoney(c.raised_amount)}</strong> raised of ${formatMoney(c.goal_amount)}
+                  · ${Math.round(pct)}% funded
+                </p>
               </div>
-              <a class="cta-button" href="${escapeHtml(c.campaign_url)}" target="_blank" rel="noopener noreferrer">
-                Give now <span class="cta-arrow">→</span>
-              </a>
+              <div class="donate-wrap">
+                <a class="cta-button" href="${escapeHtml(donateUrl)}" target="_blank" rel="noopener noreferrer">
+                  Give now →
+                </a>
+                <p class="donate-hint">Completes on ${escapeHtml(plat)}</p>
+                ${linkHint}
+              </div>
             </div>
           </div>
         </article>
@@ -846,21 +1459,22 @@
     }
 
     async function fetchStats() {
-      const bar = $("#statsBar");
-      const metrics = bar.querySelectorAll(".metric-value");
+      const metrics = $("#statsBar").querySelectorAll(".metric-value");
+      const platformCount = await fetchPlatformCount();
       try {
         const res = await fetch(`${API_URL}/stats`);
         if (!res.ok) throw new Error("stats failed");
         const data = await res.json();
         metrics[0].textContent = data.total_campaigns.toLocaleString();
         metrics[1].textContent = formatMoney(data.total_raised);
-        metrics[2].textContent = String(data.platforms?.length || 3);
+        metrics[2].textContent = String(platformCount);
       } catch {
         const total = MOCK_CAMPAIGNS.reduce((s, c) => s + (c.raised_amount || 0), 0);
         metrics[0].textContent = String(MOCK_CAMPAIGNS.length);
         metrics[1].textContent = formatMoney(total);
-        metrics[2].textContent = "3";
+        metrics[2].textContent = String(platformCount);
       }
+      $("#platformCount").textContent = String(platformCount);
     }
 
     async function fetchCampaigns() {
@@ -909,8 +1523,11 @@
     }
 
     bindEvents();
-    fetchStats();
-    fetchCampaigns();
+    initLinkSetup();
+    loadCatalog().then(() => {
+      fetchStats();
+      fetchCampaigns();
+    });
   </script>
 </body>
 </html>

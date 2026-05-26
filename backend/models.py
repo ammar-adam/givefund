@@ -36,10 +36,24 @@ class CategoriesResponse(BaseModel):
     categories: list[str]
 
 
+class PlatformInfo(BaseModel):
+    """A supported crowdfunding platform."""
+
+    id: str
+    label: str
+
+
 class PlatformsResponse(BaseModel):
     """Available campaign platforms."""
 
     platforms: list[str]
+
+
+class PlatformCatalogResponse(BaseModel):
+    """All platforms GiveFund can index."""
+
+    platforms: list[PlatformInfo]
+    count: int
 
 
 class StatsResponse(BaseModel):
@@ -59,3 +73,30 @@ class HealthResponse(BaseModel):
 
 
 SortBy = Literal["most_needed", "almost_there", "newest"]
+
+
+class CheckoutConfigResponse(BaseModel):
+    """Whether Stripe Link checkout is available."""
+
+    enabled: bool
+    publishable_key: str | None = None
+    default_tip_cents: int = 500
+    min_tip_cents: int = 100
+    max_tip_cents: int = 50_000
+
+
+class LinkCheckoutRequest(BaseModel):
+    """Start Stripe Checkout to enroll donor in Link via optional tip."""
+
+    email: str = Field(min_length=3, max_length=320)
+    amount_cents: int = Field(default=500, ge=100, le=50_000)
+    success_url: str | None = None
+    cancel_url: str | None = None
+    campaign_id: int | None = Field(default=None, ge=1)
+
+
+class LinkCheckoutResponse(BaseModel):
+    """Redirect donor to Stripe-hosted checkout."""
+
+    session_id: str
+    url: str

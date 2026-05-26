@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thank you — GiveFund</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F7F3ED;
+      --surface: #FFFFFF;
+      --ink: #1C1917;
+      --muted: #78716C;
+      --border: #E8E2D9;
+      --accent: #E8533A;
+      --serif: "Instrument Serif", Georgia, serif;
+      --sans: "Inter", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      line-height: 1.6;
+    }
+    .card {
+      max-width: 520px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 40px 36px;
+      box-shadow: 0 8px 28px rgba(28, 25, 23, 0.08);
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: 32px;
+      font-weight: 400;
+      margin: 0 0 12px;
+    }
+    p { margin: 0 0 16px; color: var(--muted); font-size: 15px; }
+    .steps {
+      margin: 24px 0;
+      padding: 0;
+      list-style: none;
+    }
+    .steps li {
+      padding: 12px 0;
+      border-top: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .steps strong { color: var(--ink); display: block; margin-bottom: 4px; }
+    a.btn {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 12px 24px;
+      border-radius: 999px;
+      background: #1C1917;
+      color: #fff;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    a.btn:hover { background: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>You're set for <em>faster</em> giving</h1>
+    <p>Thank you for supporting GiveFund. If you completed checkout with Stripe Link, your card is saved with Link — not on GiveFund's servers.</p>
+    <ul class="steps">
+      <li>
+        <strong>When you click Give now</strong>
+        You'll still complete the donation on GoFundMe, LaunchGood, or the campaign's platform.
+      </li>
+      <li>
+        <strong>Look for Link at checkout</strong>
+        Use the <strong>same email</strong> you just used. On sites that support Stripe Link (many use Stripe), sign in to Link to autofill your card.
+      </li>
+      <li>
+        <strong>We don't process campaign payments</strong>
+        GiveFund is discovery only. Your gift always goes through the original fundraiser's platform.
+      </li>
+    </ul>
+    <a class="btn" href="index.html#campaigns">Browse campaigns</a>
+  </div>
+</body>
+</html>
