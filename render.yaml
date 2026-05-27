@@ -22,6 +22,14 @@ services:
         sync: false
       - key: SCRAPE_ON_START
         value: "true"
+      - key: MIN_CAMPAIGNS
+        value: "10000"
+      - key: GFM_ALGOLIA_ONLY
+        value: "true"
+      - key: GFM_MAX_ALGOLIA_PAGES
+        value: "100"
+      - key: SCALE_TARGET
+        value: "10000"
     disk:
       name: givefund-data
       mountPath: /var/data

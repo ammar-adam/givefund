@@ -35,7 +35,20 @@ CATEGORY_SLUGS: dict[str, str] = {
 
 LOAD_MORE = 'button:has-text("Show more")'
 HITS_PER_PAGE = 50
-MAX_ALGOLIA_PAGES = int(os.getenv("GFM_MAX_ALGOLIA_PAGES", "60"))
+MAX_ALGOLIA_PAGES = int(os.getenv("GFM_MAX_ALGOLIA_PAGES", "100"))
+ALGOLIA_ONLY = os.getenv("GFM_ALGOLIA_ONLY", "true").lower() in ("1", "true", "yes")
+ALGOLIA_PARALLEL = int(os.getenv("GFM_ALGOLIA_PARALLEL", "6"))
+
+# High-yield text queries to discover funds Algolia category browse misses
+BOOST_QUERIES = tuple(
+    q.strip()
+    for q in os.getenv(
+        "GFM_BOOST_QUERIES",
+        "medical,cancer,emergency,surgery,hospital,funeral,memorial,help,gaza,palestine,"
+        "ukraine,relief,disaster,education,accident,fire,flood,baby,transplant,rent,bills",
+    ).split(",")
+    if q.strip()
+)
 
 
 def _raised_major(balance: Optional[float | int]) -> Optional[float]:
@@ -168,28 +181,125 @@ async def _scrape_category_algolia(
         await page_delay()
 
 
+async def _capture_algolia_session(session: AlgoliaSession) -> None:
+    """One browser visit to capture Algolia keys (or use GFM_ALGOLIA_* env)."""
+    if session.ready():
+        logger.info("[gofundme] using Algolia credentials from environment")
+        return
+
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        boot_page = await new_scrape_page(browser)
+        session.attach(boot_page)
+        try:
+            await boot_page.goto(
+                "https://www.gofundme.com/discover/medical-fundraising",
+                wait_until="domcontentloaded",
+                timeout=90_000,
+            )
+            await boot_page.wait_for_timeout(5000)
+            await _click_show_more(boot_page)
+            if not session.ready():
+                await boot_page.goto(
+                    "https://www.gofundme.com/s?q=medical",
+                    wait_until="domcontentloaded",
+                    timeout=90_000,
+                )
+                await boot_page.wait_for_timeout(4000)
+        finally:
+            await boot_page.close()
+            await browser.close()
+
+    if not session.ready():
+        logger.warning("[gofundme] algolia credentials not captured; DOM-only mode")
+
+
+async def _algolia_boost_searches(session: AlgoliaSession, hits_by_url: dict[str, dict]) -> None:
+    """Extra Algolia text queries to push unique fund count past 10k."""
+    if not session.ready() or not BOOST_QUERIES:
+        return
+    pages = int(os.getenv("GFM_BOOST_PAGES", "12"))
+    for query in BOOST_QUERIES:
+        try:
+            hits = await session.search_text(query, max_pages=pages, hits_per_page=HITS_PER_PAGE)
+        except Exception as exc:
+            logger.error("[gofundme] boost search %r failed: %s", query, exc)
+            continue
+        added = 0
+        for hit in hits:
+            campaign = _parse_algolia_hit(hit, "community")
+            if campaign and campaign["campaign_url"] not in hits_by_url:
+                hits_by_url[campaign["campaign_url"]] = campaign
+                added += 1
+        logger.info("[gofundme] boost %r: %d hits, %d new unique", query, len(hits), added)
+
+
+async def _scrape_all_categories_algolia(
+    session: AlgoliaSession,
+    categories: list[str],
+    hits_by_url: dict[str, dict],
+) -> None:
+    """Paginate Algolia for every category (httpx only, parallel)."""
+    import asyncio
+
+    async def _one(cat: str) -> dict[str, dict]:
+        local: dict[str, dict] = {}
+        await _scrape_category_algolia(session, cat, local)
+        return local
+
+    sem = asyncio.Semaphore(max(1, ALGOLIA_PARALLEL))
+
+    async def _guarded(cat: str) -> dict[str, dict]:
+        async with sem:
+            return await _one(cat)
+
+    chunks = await asyncio.gather(*[_guarded(c) for c in categories], return_exceptions=True)
+    for item in chunks:
+        if isinstance(item, dict):
+            hits_by_url.update(item)
+        elif isinstance(item, Exception):
+            logger.error("[gofundme] category algolia failed: %s", item)
+
+
 async def scrape_gofundme(categories: Optional[list[str]] = None) -> list[dict]:
     """Scrape GoFundMe with Algolia pagination and Show-more DOM expansion."""
     target = categories or list(CATEGORY_SLUGS.keys())
     hits_by_url: dict[str, dict] = {}
+    session = AlgoliaSession()
+    await _capture_algolia_session(session)
+
+    if ALGOLIA_ONLY and session.ready():
+        logger.info(
+            "[gofundme] ALGOLIA_ONLY — %d categories, %d pages each, boost queries=%d",
+            len(target),
+            MAX_ALGOLIA_PAGES,
+            len(BOOST_QUERIES),
+        )
+        await _scrape_all_categories_algolia(session, target, hits_by_url)
+        await _algolia_boost_searches(session, hits_by_url)
+        campaigns = list(hits_by_url.values())
+        logger.info("[gofundme] total unique campaigns: %d", len(campaigns))
+        return campaigns
+
+    if ALGOLIA_ONLY and not session.ready():
+        logger.error(
+            "[gofundme] GFM_ALGOLIA_ONLY set but no credentials — set GFM_ALGOLIA_APP_ID/API_KEY"
+        )
 
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
-        session = AlgoliaSession()
-        boot_page = await new_scrape_page(browser)
-        session.attach(boot_page)
-
-        try:
-            await boot_page.goto(
-                "https://www.gofundme.com/discover/medical-fundraising",
-                wait_until="networkidle",
-                timeout=60_000,
-            )
-            await _click_show_more(boot_page)
-            if not session.ready():
-                logger.warning("[gofundme] algolia credentials not captured; DOM-only mode")
-        finally:
-            await boot_page.close()
+        if not session.ready():
+            boot_page = await new_scrape_page(browser)
+            session.attach(boot_page)
+            try:
+                await boot_page.goto(
+                    "https://www.gofundme.com/discover/medical-fundraising",
+                    wait_until="networkidle",
+                    timeout=60_000,
+                )
+                await _click_show_more(boot_page)
+            finally:
+                await boot_page.close()
 
         for cat in target:
             slug = CATEGORY_SLUGS.get(cat, cat)

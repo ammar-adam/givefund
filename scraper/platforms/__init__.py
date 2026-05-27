@@ -8,6 +8,7 @@ from platforms.gofundme import scrape_gofundme
 from platforms.islamicrelief import scrape_islamicrelief_ca
 from platforms.ketto import scrape_ketto
 from platforms.launchgood import scrape_launchgood
+from platforms.opencollective import scrape_opencollective
 
 PLATFORM_SCRAPERS = {
     "gofundme": scrape_gofundme,
@@ -17,6 +18,7 @@ PLATFORM_SCRAPERS = {
     "islamicrelief_ca": scrape_islamicrelief_ca,
     "ketto": scrape_ketto,
     "backabuddy": scrape_backabuddy,
+    "opencollective": scrape_opencollective,
     **EXTRA_SCRAPERS,
 }
 

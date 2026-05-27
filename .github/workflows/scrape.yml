@@ -22,8 +22,8 @@ jobs:
           pip install -r backend/requirements.txt
           playwright install chromium --with-deps
 
-      - name: Run live ingest (all platforms)
-        run: cd scraper && python live_runner.py --once --parallel 6
+      - name: Bootstrap 10k+ campaigns (GFM Algolia + Open Collective + platforms)
+        run: cd scraper && python scale_ingest.py --target 10000 --parallel 6
         env:
           DB_PATH: ${{ github.workspace }}/givefund.db
           GFM_ALGOLIA_APP_ID: ${{ secrets.GFM_ALGOLIA_APP_ID }}

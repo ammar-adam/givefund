@@ -10,18 +10,20 @@ export DB_PATH="${DB_PATH:-/var/data/givefund.db}"
 export LIVE_SCRAPE="${LIVE_SCRAPE:-true}"
 export SCRAPE_INTERVAL="${SCRAPE_INTERVAL:-1800}"
 export SCRAPE_ON_START="${SCRAPE_ON_START:-true}"
-MIN_CAMPAIGNS="${MIN_CAMPAIGNS:-500}"
+MIN_CAMPAIGNS="${MIN_CAMPAIGNS:-10000}"
 
 COUNT=$(python -c "import sqlite3, os, pathlib
 p = os.environ['DB_PATH']
 print(0 if not pathlib.Path(p).exists() else sqlite3.connect(p).execute('SELECT COUNT(*) FROM campaigns').fetchone()[0])" 2>/dev/null || echo 0)
 
 if [ "$SCRAPE_ON_START" = "true" ] && [ "$COUNT" -lt "$MIN_CAMPAIGNS" ]; then
-  echo "Database has $COUNT campaigns (min $MIN_CAMPAIGNS) — running initial live ingest..."
+  echo "Database has $COUNT campaigns (min $MIN_CAMPAIGNS) — running scale ingest (10k target)..."
   cd scraper
   pip install -r requirements.txt -q 2>/dev/null || true
   playwright install chromium 2>/dev/null || true
-  python live_runner.py --once --parallel "${SCRAPE_PARALLEL:-4}" || true
+  export GFM_ALGOLIA_ONLY=true
+  export GFM_MAX_ALGOLIA_PAGES="${GFM_MAX_ALGOLIA_PAGES:-100}"
+  python scale_ingest.py --target "${SCALE_TARGET:-10000}" --parallel "${SCRAPE_PARALLEL:-4}" || true
   cd "$ROOT"
 fi
 
