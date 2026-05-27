@@ -78,6 +78,19 @@ class PlatformIngestStat(BaseModel):
     error: str | None = None
 
 
+class LiveSearchResponse(BaseModel):
+    """On-demand cross-platform search results (may include campaigns not yet in DB)."""
+
+    query: str
+    campaigns: list[Campaign]
+    total: int
+    live_count: int = 0
+    cached_count: int = 0
+    by_platform: dict[str, int] = {}
+    persisted: int | None = None
+    error: str | None = None
+
+
 class IngestStatusResponse(BaseModel):
     """Live scrape pipeline status for the UI."""
 

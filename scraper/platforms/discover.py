@@ -1,10 +1,11 @@
 """Generic discover-page scraper for additional crowdfunding platforms."""
 
 import logging
+import os
 import re
 from dataclasses import dataclass
 from typing import Callable, Optional
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote_plus, urljoin, urlparse
 
 from playwright.async_api import ElementHandle, async_playwright
 
@@ -33,7 +34,8 @@ class DiscoverConfig:
     link_markers: tuple[str, ...]
     card_selectors: tuple[str, ...] = ("article", "a[href]", "[class*='card']")
     max_pages: int = 5
-    max_campaigns: int = 120
+    max_campaigns: int = int(os.getenv("DISCOVER_MAX_CAMPAIGNS", "200"))
+    search_url_template: str | None = None
 
 
 def _category_from_text(text: str) -> str:
@@ -162,6 +164,57 @@ async def scrape_discover(config: DiscoverConfig) -> list[dict]:
             await browser.close()
 
     logger.info("[%s] total campaigns: %d", config.platform, len(campaigns))
+    return campaigns
+
+
+async def scrape_search(config: DiscoverConfig, query: str) -> list[dict]:
+    """Live search: open platform search URL and harvest campaign links (fast, no enrich)."""
+    if not config.search_url_template or not query.strip():
+        return []
+
+    search_url = config.search_url_template.format(query=quote_plus(query.strip()))
+    campaigns: list[dict] = []
+    seen: set[str] = set()
+
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        page = await new_scrape_page(browser)
+        try:
+            logger.info("[%s] search %r -> %s", config.platform, query, search_url)
+            await page.goto(search_url, wait_until="domcontentloaded", timeout=45_000)
+            await page.wait_for_timeout(3000)
+
+            hrefs: set[str] = set()
+            try:
+                for raw in await page.eval_on_selector_all("a[href]", "els => els.map(e => e.href)"):
+                    norm = _normalize_url(raw, config.base_url)
+                    if norm and any(m in norm for m in config.link_markers):
+                        hrefs.add(norm)
+            except Exception:
+                pass
+
+            html = await page.content()
+            for marker in config.link_markers:
+                pattern = rf'href="([^"]*{re.escape(marker)}[^"]*)"'
+                for match in re.findall(pattern, html, re.I):
+                    norm = _normalize_url(match, config.base_url)
+                    if norm:
+                        hrefs.add(norm)
+
+            for url in list(hrefs)[: config.max_campaigns]:
+                if url in seen:
+                    continue
+                seen.add(url)
+                campaign = await _extract_from_link(page, url, config.platform, None)
+                if campaign:
+                    campaigns.append(campaign)
+        except Exception as exc:
+            logger.error("[%s] search failed %r: %s", config.platform, query, exc)
+        finally:
+            await page.close()
+            await browser.close()
+
+    logger.info("[%s] search %r -> %d campaigns", config.platform, query, len(campaigns))
     return campaigns
 
 

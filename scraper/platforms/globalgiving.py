@@ -155,3 +155,58 @@ async def scrape_globalgiving(max_pages: int = 50) -> list[dict]:
 
     logger.info("[%s] total campaigns: %d", PLATFORM, len(campaigns))
     return campaigns
+
+
+SEARCH_URL = (
+    "https://api.globalgiving.org/api/public/services/search/projects/summary"
+)
+
+
+async def search_globalgiving(query: str, *, max_results: int = 40) -> list[dict]:
+    """Keyword search via official API (requires GLOBALGIVING_API_KEY)."""
+
+    api_key = os.getenv("GLOBALGIVING_API_KEY", "").strip()
+    if not api_key or not query.strip():
+        return []
+
+    campaigns: list[dict] = []
+    start = 0
+    headers = {"Accept": "application/json"}
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        while len(campaigns) < max_results:
+            params = {
+                "api_key": api_key,
+                "q": query.strip(),
+                "start": str(start),
+            }
+            try:
+                resp = await client.get(SEARCH_URL, params=params, headers=headers)
+                resp.raise_for_status()
+                data = resp.json()
+            except Exception as exc:
+                logger.error("[%s] search %r failed: %s", PLATFORM, query, exc)
+                break
+
+            projects = data.get("projects", {}).get("project", [])
+            if isinstance(projects, dict):
+                projects = [projects]
+            if not projects:
+                break
+
+            for proj in projects:
+                if not isinstance(proj, dict):
+                    continue
+                try:
+                    campaign = _project_to_campaign(proj)
+                    if campaign.get("campaign_url"):
+                        campaigns.append(campaign)
+                except Exception as exc:
+                    logger.error("[%s] search parse: %s", PLATFORM, exc)
+
+            start += len(projects)
+            if len(projects) < 10:
+                break
+
+    logger.info("[%s] search %r -> %d", PLATFORM, query, len(campaigns))
+    return campaigns[:max_results]

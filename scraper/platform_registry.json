@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "description": "Crowdfunding/charity platform scrape matrix. See SCRAPER_PLATFORM_MATRIX.md for full ~150 list.",
+  "platforms": [
+    {
+      "id": "gofundme",
+      "name": "GoFundMe",
+      "region": "global",
+      "scrape_method": "algolia",
+      "search_method": "algolia_text",
+      "env_keys": ["GFM_ALGOLIA_APP_ID", "GFM_ALGOLIA_API_KEY"],
+      "base_url": "https://www.gofundme.com",
+      "notes": "Index prod_funds_feed_replica_1; capture keys from /discover or /s?q="
+    },
+    {
+      "id": "launchgood",
+      "name": "LaunchGood",
+      "region": "global_muslim",
+      "scrape_method": "discover",
+      "search_method": "search_url",
+      "base_url": "https://www.launchgood.com",
+      "search_url_template": "https://www.launchgood.com/search?q={query}",
+      "discover_urls": ["https://www.launchgood.com/discover", "https://www.launchgood.com/explore"],
+      "link_markers": ["/campaign/", "/project/"]
+    },
+    {
+      "id": "globalgiving",
+      "name": "GlobalGiving",
+      "region": "global",
+      "scrape_method": "official_api",
+      "search_method": "api_q",
+      "env_keys": ["GLOBALGIVING_API_KEY"],
+      "base_url": "https://www.globalgiving.org",
+      "notes": "GET /api/public/services/search/projects/summary?q="
+    },
+    {
+      "id": "justgiving",
+      "name": "JustGiving",
+      "region": "uk",
+      "scrape_method": "discover",
+      "search_method": "search_url",
+      "base_url": "https://www.justgiving.com",
+      "search_url_template": "https://www.justgiving.com/search?q={query}",
+      "discover_urls": ["https://www.justgiving.com/crowdfunding"],
+      "link_markers": ["/fundraising/", "/crowdfunding/"]
+    },
+    {
+      "id": "ketto",
+      "name": "Ketto",
+      "region": "india",
+      "scrape_method": "discover",
+      "search_method": "search_url",
+      "base_url": "https://www.ketto.org",
+      "search_url_template": "https://www.ketto.org/search?search={query}",
+      "discover_urls": ["https://www.ketto.org/crowdfunding/fundraisers"],
+      "link_markers": ["/fundraiser/", "/crowdfunding/"]
+    },
+    {
+      "id": "backabuddy",
+      "name": "BackaBuddy",
+      "region": "south_africa",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.backabuddy.co.za/search?search={query}",
+      "base_url": "https://www.backabuddy.co.za",
+      "link_markers": ["/campaign/"]
+    },
+    {
+      "id": "milaap",
+      "name": "Milaap",
+      "region": "india",
+      "scrape_method": "discover",
+      "search_url_template": "https://milaap.org/search?q={query}",
+      "base_url": "https://milaap.org",
+      "discover_urls": ["https://milaap.org/fundraisers"],
+      "link_markers": ["/fundraisers/", "/fundraiser/"]
+    },
+    {
+      "id": "mchanga",
+      "name": "M-Changa",
+      "region": "kenya",
+      "scrape_method": "discover",
+      "base_url": "https://www.mchanga.africa",
+      "discover_urls": ["https://www.mchanga.africa/"],
+      "link_markers": ["/fundraiser/", "/campaign/"]
+    },
+    {
+      "id": "islamicrelief_ca",
+      "name": "Islamic Relief Canada",
+      "region": "canada",
+      "scrape_method": "discover",
+      "base_url": "https://fundraise.islamicreliefcanada.org",
+      "link_markers": ["/campaign/"]
+    },
+    {
+      "id": "givebutter",
+      "name": "Givebutter",
+      "region": "us",
+      "scrape_method": "discover",
+      "search_url_template": "https://givebutter.com/explore?search={query}",
+      "base_url": "https://givebutter.com",
+      "link_markers": ["/campaign/", "/f/"]
+    },
+    {
+      "id": "chuffed",
+      "name": "Chuffed",
+      "region": "global",
+      "scrape_method": "discover",
+      "search_url_template": "https://chuffed.org/explore?search={query}",
+      "base_url": "https://chuffed.org",
+      "link_markers": ["/project/"]
+    },
+    {
+      "id": "mightycause",
+      "name": "MightyCause",
+      "region": "us",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.mightycause.com/search?q={query}",
+      "base_url": "https://www.mightycause.com",
+      "link_markers": ["/story/", "/fundraiser/"]
+    },
+    {
+      "id": "fundrazr",
+      "name": "FundRazr",
+      "region": "global",
+      "scrape_method": "discover",
+      "search_url_template": "https://fundrazr.com/crowdfunding/projects?search={query}",
+      "base_url": "https://fundrazr.com",
+      "link_markers": ["/campaigns/", "/project/"]
+    },
+    {
+      "id": "gogetfunding",
+      "name": "GoGetFunding",
+      "region": "global",
+      "scrape_method": "discover",
+      "search_url_template": "https://gogetfunding.com/search/{query}",
+      "base_url": "https://gogetfunding.com",
+      "link_markers": ["/fundraiser/", "/project/"]
+    },
+    {
+      "id": "giveasia",
+      "name": "Give.asia",
+      "region": "southeast_asia",
+      "scrape_method": "discover",
+      "base_url": "https://give.asia",
+      "discover_urls": ["https://give.asia/explore"],
+      "link_markers": ["/campaign/", "/project/"]
+    },
+    {
+      "id": "thundafund",
+      "name": "Thundafund",
+      "region": "south_africa",
+      "scrape_method": "discover",
+      "base_url": "https://www.thundafund.com",
+      "link_markers": ["/project/", "/campaign/"]
+    },
+    {
+      "id": "donorbox",
+      "name": "Donorbox",
+      "region": "global",
+      "scrape_method": "discover",
+      "base_url": "https://donorbox.org",
+      "link_markers": ["/campaign/"],
+      "notes": "Mostly org pages; weak public index"
+    },
+    {
+      "id": "impactguru",
+      "name": "ImpactGuru",
+      "region": "india",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.impactguru.com/search?search={query}",
+      "base_url": "https://www.impactguru.com",
+      "link_markers": ["/fundraiser/", "/campaign/"],
+      "notes": "Backlog scraper — search wired for live_search"
+    },
+    {
+      "id": "whydonate",
+      "name": "WhyDonate",
+      "region": "eu",
+      "scrape_method": "discover",
+      "search_url_template": "https://whydonate.com/en/search/{query}",
+      "base_url": "https://whydonate.com",
+      "link_markers": ["/campaign/", "/fundraiser/"],
+      "notes": "Backlog — live search only until bulk scraper added"
+    },
+    {
+      "id": "givelively",
+      "name": "GiveLively",
+      "region": "us",
+      "scrape_method": "blocked",
+      "notes": "No public campaign index; org/event pages behind auth"
+    },
+    {
+      "id": "facebook_fundraisers",
+      "name": "Facebook/Meta fundraisers",
+      "region": "global",
+      "scrape_method": "blocked",
+      "notes": "Graph API restricted; no public search index"
+    },
+    {
+      "id": "paypal_giving",
+      "name": "PayPal Giving Fund",
+      "region": "global",
+      "scrape_method": "blocked",
+      "notes": "Directory not P2P campaign URLs"
+    },
+    {
+      "id": "kickstarter",
+      "name": "Kickstarter",
+      "region": "global",
+      "scrape_method": "discover",
+      "notes": "Reward crowdfunding; API partner program only — no public Algolia"
+    },
+    {
+      "id": "indiegogo",
+      "name": "Indiegogo",
+      "region": "global",
+      "scrape_method": "discover",
+      "notes": "Product/reward focus; /explore HTML scrape possible"
+    },
+    {
+      "id": "kiva",
+      "name": "Kiva",
+      "region": "global",
+      "scrape_method": "official_api",
+      "env_keys": ["KIVA_API_KEY"],
+      "notes": "Loans not donations — optional future"
+    },
+    {
+      "id": "classy",
+      "name": "Classy (GoFundMe Pro)",
+      "region": "us",
+      "scrape_method": "blocked",
+      "notes": "Enterprise; no public campaign search"
+    },
+    {
+      "id": "zeffy",
+      "name": "Zeffy",
+      "region": "us",
+      "scrape_method": "org_only",
+      "notes": "Nonprofit donation forms, not P2P listings"
+    }
+  ]
+}

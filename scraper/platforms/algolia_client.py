@@ -1,6 +1,7 @@
 """Capture Algolia credentials from a live GoFundMe page and paginate discover results."""
 
 import logging
+import os
 from typing import Any, Optional
 from urllib.parse import parse_qs, quote, urlparse
 
@@ -45,9 +46,9 @@ class AlgoliaSession:
     """Holds search-only API key captured from the browser session."""
 
     def __init__(self) -> None:
-        self.app_id: Optional[str] = None
-        self.api_key: Optional[str] = None
-        self._captured = False
+        self.app_id: Optional[str] = os.getenv("GFM_ALGOLIA_APP_ID")
+        self.api_key: Optional[str] = os.getenv("GFM_ALGOLIA_API_KEY")
+        self._captured = bool(self.app_id and self.api_key)
 
     def attach(self, page: Page) -> None:
         """Listen for Algolia POST requests and store credentials."""
@@ -80,6 +81,19 @@ class AlgoliaSession:
     def ready(self) -> bool:
         return bool(self.app_id and self.api_key)
 
+    def _base_params(self, page: int, hits_per_page: int, query: str = "") -> str:
+        return (
+            'analyticsTags=["page:discover"]'
+            f"&attributesToRetrieve={ATTRIBUTES}"
+            "&clickAnalytics=true"
+            "&exactOnSingleWordQuery=word"
+            "&highlightPostTag=__/ais-highlight__"
+            "&highlightPreTag=__ais-highlight__"
+            f"&hitsPerPage={hits_per_page}"
+            f"&page={page}"
+            f"&query={quote(query)}"
+        )
+
     def build_params(self, category_id: int, page: int, hits_per_page: int) -> str:
         """Build Algolia query params matching GoFundMe discover format."""
         filters = (
@@ -87,18 +101,15 @@ class AlgoliaSession:
             "AND NOT campaign_tags:greylisted"
         )
         return (
-            'analyticsTags=["page:discover"]'
-            f"&attributesToRetrieve={ATTRIBUTES}"
-            "&clickAnalytics=true"
-            "&exactOnSingleWordQuery=word"
-            f"&filters={quote(filters)}"
-            "&highlightPostTag=__/ais-highlight__"
-            "&highlightPreTag=__ais-highlight__"
-            f"&hitsPerPage={hits_per_page}"
-            "&optionalFacetFilters=(country:US<score=3>, user_language_locale:en_US<score=2>)"
-            f"&page={page}"
-            "&query="
+            self._base_params(page, hits_per_page)
+            + f"&filters={quote(filters)}"
+            + "&optionalFacetFilters=(country:US<score=3>, user_language_locale:en_US<score=2>)"
         )
+
+    def build_text_search_params(self, query: str, page: int, hits_per_page: int) -> str:
+        """Full-text search across all active GoFundMe campaigns."""
+        filters = "turn_off_donations=0 AND NOT campaign_tags:greylisted"
+        return self._base_params(page, hits_per_page, query) + f"&filters={quote(filters)}"
 
     async def fetch_category_page(
         self,
@@ -132,3 +143,47 @@ class AlgoliaSession:
         for result in data.get("results", []):
             hits.extend(result.get("hits", []))
         return hits
+
+    async def search_text(
+        self,
+        query: str,
+        *,
+        max_pages: int = 8,
+        hits_per_page: int = 50,
+    ) -> list[dict[str, Any]]:
+        """Paginate Algolia for a free-text query (e.g. palestine, cancer)."""
+        if not self.ready() or not query.strip():
+            return []
+
+        all_hits: list[dict[str, Any]] = []
+        for page_num in range(max_pages):
+            body = {
+                "requests": [
+                    {
+                        "indexName": INDEX_NAME,
+                        "params": self.build_text_search_params(
+                            query.strip(), page_num, hits_per_page
+                        ),
+                    }
+                ]
+            }
+            headers = {
+                "X-Algolia-Application-Id": self.app_id,
+                "X-Algolia-API-Key": self.api_key,
+                "Content-Type": "application/json",
+            }
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(ALGOLIA_HOST, headers=headers, json=body)
+                response.raise_for_status()
+                data = response.json()
+
+            page_hits: list[dict[str, Any]] = []
+            for result in data.get("results", []):
+                page_hits.extend(result.get("hits", []))
+            if not page_hits:
+                break
+            all_hits.extend(page_hits)
+            if len(page_hits) < hits_per_page:
+                break
+        logger.info("[algolia] search %r -> %d hits", query, len(all_hits))
+        return all_hits

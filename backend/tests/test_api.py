@@ -109,6 +109,11 @@ def test_platform_catalog(client):
     assert "justgiving" in ids
 
 
+def test_search_live_validation(client):
+    """Live search requires at least 2 characters."""
+    assert client.get("/search/live?q=a").status_code == 422
+
+
 def test_ingest_status(client):
     """Ingest status endpoint returns live tracking shape."""
     response = client.get("/ingest/status")

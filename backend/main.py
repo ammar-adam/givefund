@@ -21,6 +21,7 @@ from models import (
     CheckoutConfigResponse,
     HealthResponse,
     IngestStatusResponse,
+    LiveSearchResponse,
     LinkCheckoutRequest,
     LinkCheckoutResponse,
     PlatformCatalogResponse,
@@ -31,6 +32,7 @@ from models import (
 )
 from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
 import stripe_checkout
+from search_bridge import run_live_search_subprocess
 
 
 load_dotenv()
@@ -93,6 +95,81 @@ async def validation_exception_handler(
         f"{'.'.join(str(loc) for loc in err['loc'])}: {err['msg']}" for err in errors
     )
     return JSONResponse(status_code=422, content={"detail": detail or "Invalid request"})
+
+
+def _campaign_from_row_dict(row: dict, row_id: int) -> Campaign:
+    """Build API Campaign from scraper dict (synthetic id when not in DB)."""
+    goal = float(row.get("goal_amount") or 0)
+    raised = float(row.get("raised_amount") or 0)
+    gap = max(goal - raised, 0.0) if goal > 0 else 0.0
+    pct = min(100.0, round(100.0 * raised / goal, 1)) if goal > 0 else 0.0
+    return Campaign(
+        id=row_id,
+        title=row.get("title"),
+        story_snippet=row.get("story_snippet"),
+        photo_url=row.get("photo_url"),
+        goal_amount=row.get("goal_amount"),
+        raised_amount=row.get("raised_amount"),
+        funding_gap=gap,
+        pct_funded=pct,
+        platform=row.get("platform") or "unknown",
+        campaign_url=row["campaign_url"],
+        category=row.get("category"),
+        location=row.get("location"),
+        scraped_at=row.get("scraped_at"),
+    )
+
+
+@app.get("/search/live", response_model=LiveSearchResponse)
+async def search_live(
+    q: str = Query(min_length=2, max_length=120),
+    limit: int = Query(default=50, ge=5, le=100),
+    persist: bool = Query(default=False),
+    merge_db: bool = Query(default=True),
+) -> LiveSearchResponse:
+    """
+    Live index: scrape/search all wired platforms for this query and return results.
+    Surfaces campaigns even if they were never bulk-ingested.
+    """
+    try:
+        raw = await run_live_search_subprocess(q, limit=limit, persist=persist)
+    except Exception as exc:
+        logger.exception("live search failed")
+        raise HTTPException(status_code=500, detail="Live search failed") from exc
+
+    live_rows = raw.get("campaigns") or []
+    by_platform = raw.get("by_platform") or {}
+    merged: dict[str, Campaign] = {}
+
+    if merge_db:
+        try:
+            db_rows, _, _ = await db.get_campaigns(
+                search=q, page=1, page_size=limit, sort_by="most_needed"
+            )
+            for c in db_rows:
+                merged[c.campaign_url] = c
+        except Exception:
+            logger.warning("DB merge for live search skipped")
+
+    base_id = 900_000_000
+    for i, row in enumerate(live_rows):
+        url = row.get("campaign_url")
+        if not url:
+            continue
+        synthetic_id = base_id + (abs(hash(url)) % 99_000_000)
+        merged[url] = _campaign_from_row_dict(row, synthetic_id)
+
+    campaigns = list(merged.values())[:limit]
+    return LiveSearchResponse(
+        query=q,
+        campaigns=campaigns,
+        total=len(campaigns),
+        live_count=len(live_rows),
+        cached_count=max(0, len(campaigns) - len(live_rows)),
+        by_platform=by_platform,
+        persisted=raw.get("saved"),
+        error=raw.get("error"),
+    )
 
 
 @app.get("/campaigns", response_model=CampaignsResponse)
