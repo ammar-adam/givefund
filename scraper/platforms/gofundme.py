@@ -1,6 +1,7 @@
 """GoFundMe discover scraper — Algolia pagination + Show more DOM expansion."""
 
 import logging
+import os
 import random
 from typing import Any, Optional
 
@@ -34,7 +35,7 @@ CATEGORY_SLUGS: dict[str, str] = {
 
 LOAD_MORE = 'button:has-text("Show more")'
 HITS_PER_PAGE = 50
-MAX_ALGOLIA_PAGES = 40
+MAX_ALGOLIA_PAGES = int(os.getenv("GFM_MAX_ALGOLIA_PAGES", "60"))
 
 
 def _raised_major(balance: Optional[float | int]) -> Optional[float]:

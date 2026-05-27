@@ -277,6 +277,7 @@ async def get_stats() -> dict[str, Any]:
             ORDER BY platform
             """
         )
+        ingest = await _get_ingest_meta(connection)
     finally:
         await connection.close()
 
@@ -285,7 +286,110 @@ async def get_stats() -> dict[str, Any]:
         "total_raised": float(row["total_raised"] if row else 0),
         "platforms": [r[0] for r in platform_rows],
         "last_scraped": row["last_scraped"] if row else None,
+        "last_ingest_at": ingest.get("last_ingest_at"),
+        "live_tracking": True,
     }
+
+
+async def _get_ingest_meta(connection: aiosqlite.Connection) -> dict[str, Any]:
+    """Read latest ingest run timestamps if scraper created the tables."""
+
+    try:
+        row = await _fetchone(
+            connection,
+            """
+            SELECT started_at, finished_at, status
+            FROM ingest_runs
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+        )
+    except Exception:
+        return {}
+    if not row:
+        return {}
+    finished = row["finished_at"] if hasattr(row, "keys") else row[1]
+    started = row["started_at"] if hasattr(row, "keys") else row[0]
+    status = row["status"] if hasattr(row, "keys") else row[2]
+    return {
+        "last_ingest_at": finished or started,
+        "ingest_status": status,
+        "ingest_running": status == "running" and finished is None,
+    }
+
+
+async def get_ingest_status() -> dict[str, Any]:
+    """Return live ingestion status for /ingest/status."""
+
+    import os
+
+    interval = int(os.getenv("SCRAPE_INTERVAL", "1800"))
+    base = {
+        "live_tracking": True,
+        "refresh_interval_sec": interval,
+        "total_campaigns": 0,
+        "is_running": False,
+        "platforms": [],
+    }
+    connection = await connect_readonly()
+    if connection is None:
+        return base
+
+    try:
+        connection.row_factory = aiosqlite.Row
+        count_row = await _fetchone(connection, "SELECT COUNT(*) AS n FROM campaigns")
+        base["total_campaigns"] = int(count_row["n"] if count_row else 0)
+
+        run_row = await _fetchone(
+            connection,
+            """
+            SELECT id, started_at, finished_at, status, total_scraped, total_saved
+            FROM ingest_runs
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+        )
+        if not run_row:
+            return base
+
+        run_id = run_row["id"]
+        is_running = run_row["finished_at"] is None and run_row["status"] == "running"
+        rows = await connection.execute_fetchall(
+            """
+            SELECT platform, scraped, saved, db_total, duration_sec, error
+            FROM ingest_platform_stats
+            WHERE run_id = ?
+            ORDER BY db_total DESC
+            """,
+            (run_id,),
+        )
+        return {
+            "live_tracking": True,
+            "refresh_interval_sec": interval,
+            "run_id": run_row["id"],
+            "status": run_row["status"],
+            "started_at": run_row["started_at"],
+            "finished_at": run_row["finished_at"],
+            "total_scraped": int(run_row["total_scraped"] or 0),
+            "total_saved": int(run_row["total_saved"] or 0),
+            "total_campaigns": base["total_campaigns"],
+            "is_running": is_running,
+            "platforms": [
+                {
+                    "platform": r["platform"],
+                    "scraped": r["scraped"],
+                    "saved": r["saved"],
+                    "db_total": r["db_total"],
+                    "duration_sec": r["duration_sec"],
+                    "error": r["error"],
+                }
+                for r in rows
+            ],
+        }
+    except Exception:
+        return base
+    finally:
+        await connection.close()
 
 
 async def get_campaign_count() -> int:

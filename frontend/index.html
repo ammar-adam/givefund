@@ -852,6 +852,40 @@
 
     .hidden { display: none !important; }
 
+    .live-status {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #16a34a;
+      flex-shrink: 0;
+      animation: live-pulse 2s ease-in-out infinite;
+    }
+
+    .live-dot.running { background: var(--accent); }
+
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.92); }
+    }
+
+    .card-updated {
+      margin: 4px 0 0;
+      font-size: 10px;
+      color: var(--muted-light);
+      text-align: right;
+    }
+
     @media (max-width: 900px) {
       .capabilities { grid-template-columns: 1fr; }
     }
@@ -942,6 +976,10 @@
       <div class="feed-header">
         <h2>Live campaigns</h2>
         <p>Updated from public listings. Filter by cause, platform, or how urgently funds are still needed.</p>
+        <p id="liveStatus" class="live-status" aria-live="polite">
+          <span class="live-dot" id="liveDot" aria-hidden="true"></span>
+          <span id="liveStatusText">Connecting to live index…</span>
+        </p>
       </div>
 
       <div id="mockBanner" class="banner hidden">
@@ -1104,7 +1142,8 @@
       search: "",
       sortBy: "most_needed",
       usingMock: false,
-      catalog: PLATFORM_CATALOG
+      catalog: PLATFORM_CATALOG,
+      refreshIntervalMs: 120000
     };
 
     const $ = (sel) => document.querySelector(sel);
@@ -1312,6 +1351,45 @@
       }).format(amount || 0);
     }
 
+    function formatRelativeTime(iso) {
+      if (!iso) return "";
+      const then = new Date(iso).getTime();
+      if (Number.isNaN(then)) return "";
+      const sec = Math.floor((Date.now() - then) / 1000);
+      if (sec < 45) return "just now";
+      if (sec < 3600) return `${Math.floor(sec / 60)}m ago`;
+      if (sec < 86400) return `${Math.floor(sec / 3600)}h ago`;
+      return `${Math.floor(sec / 86400)}d ago`;
+    }
+
+    async function fetchIngestStatus() {
+      const textEl = $("#liveStatusText");
+      const dot = $("#liveDot");
+      try {
+        const res = await fetch(`${API_URL}/ingest/status`);
+        if (!res.ok) throw new Error("ingest status failed");
+        const data = await res.json();
+        const total = (data.total_campaigns ?? 0).toLocaleString();
+        if (data.refresh_interval_sec) {
+          state.refreshIntervalMs = Math.max(60000, data.refresh_interval_sec * 1000);
+        }
+        if (data.is_running) {
+          dot.classList.add("running");
+          textEl.textContent = `Indexing now — ${total} campaigns in database`;
+          return;
+        }
+        dot.classList.remove("running");
+        const when = data.finished_at || data.started_at;
+        const ago = when ? formatRelativeTime(when) : "";
+        textEl.textContent = ago
+          ? `Live index · ${total} campaigns · refreshed ${ago}`
+          : `Live index · ${total} campaigns`;
+      } catch {
+        dot.classList.remove("running");
+        textEl.textContent = "Live index offline — showing cached or sample data";
+      }
+    }
+
     function debounce(fn, ms) {
       let t;
       return (...args) => {
@@ -1465,6 +1543,7 @@
                 </a>
                 <p class="donate-hint">Completes on ${escapeHtml(plat)}</p>
                 ${linkHint}
+                ${c.scraped_at ? `<p class="card-updated">Indexed ${escapeHtml(formatRelativeTime(c.scraped_at))}</p>` : ""}
               </div>
             </div>
           </div>
@@ -1552,7 +1631,24 @@
     initLinkSetup();
     loadCatalog().then(() => {
       fetchStats();
+      fetchIngestStatus();
       fetchCampaigns();
+      setInterval(fetchIngestStatus, 60000);
+      let campaignPollTimer = null;
+      function scheduleCampaignPoll() {
+        if (campaignPollTimer) clearInterval(campaignPollTimer);
+        campaignPollTimer = setInterval(() => {
+          if (!state.usingMock) {
+            fetchStats();
+            fetchIngestStatus();
+            fetchCampaigns();
+          }
+        }, state.refreshIntervalMs);
+      }
+      fetchIngestStatus().then(scheduleCampaignPoll);
+      setInterval(() => {
+        fetchIngestStatus().then(scheduleCampaignPoll);
+      }, 300000);
     });
   </script>
 </body>

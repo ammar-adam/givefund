@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import os
 import re
 from typing import Optional
 from urllib.parse import urlparse
@@ -16,7 +17,7 @@ DISCOVER_URLS = (
     "https://www.launchgood.com/discover",
     "https://www.launchgood.com/explore",
 )
-MAX_ENRICH = 50  # cap per run to stay polite and fast
+MAX_ENRICH = int(os.getenv("LAUNCHGOOD_MAX_ENRICH", "120"))
 
 
 def _category_from_text(text: str) -> str:

@@ -63,6 +63,35 @@ class StatsResponse(BaseModel):
     total_raised: float
     platforms: list[str]
     last_scraped: str | None = None
+    last_ingest_at: str | None = None
+    live_tracking: bool = True
+
+
+class PlatformIngestStat(BaseModel):
+    """Per-platform result from the latest ingest run."""
+
+    platform: str
+    scraped: int = 0
+    saved: int = 0
+    db_total: int = 0
+    duration_sec: float = 0.0
+    error: str | None = None
+
+
+class IngestStatusResponse(BaseModel):
+    """Live scrape pipeline status for the UI."""
+
+    live_tracking: bool = True
+    refresh_interval_sec: int = 1800
+    run_id: int | None = None
+    status: str | None = None
+    started_at: str | None = None
+    finished_at: str | None = None
+    total_scraped: int = 0
+    total_saved: int = 0
+    total_campaigns: int = 0
+    is_running: bool = False
+    platforms: list[PlatformIngestStat] = []
 
 
 class HealthResponse(BaseModel):

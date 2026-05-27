@@ -32,8 +32,8 @@ class DiscoverConfig:
     start_urls: tuple[str, ...]
     link_markers: tuple[str, ...]
     card_selectors: tuple[str, ...] = ("article", "a[href]", "[class*='card']")
-    max_pages: int = 3
-    max_campaigns: int = 30
+    max_pages: int = 5
+    max_campaigns: int = 120
 
 
 def _category_from_text(text: str) -> str:

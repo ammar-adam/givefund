@@ -109,6 +109,16 @@ def test_platform_catalog(client):
     assert "justgiving" in ids
 
 
+def test_ingest_status(client):
+    """Ingest status endpoint returns live tracking shape."""
+    response = client.get("/ingest/status")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["live_tracking"] is True
+    assert "total_campaigns" in data
+    assert "refresh_interval_sec" in data
+
+
 def test_platforms_and_stats(client):
     """Aggregate endpoints return expected keys."""
     platforms = client.get("/platforms").json()

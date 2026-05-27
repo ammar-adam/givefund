@@ -20,6 +20,7 @@ from models import (
     CategoriesResponse,
     CheckoutConfigResponse,
     HealthResponse,
+    IngestStatusResponse,
     LinkCheckoutRequest,
     LinkCheckoutResponse,
     PlatformCatalogResponse,
@@ -165,6 +166,18 @@ async def platform_catalog() -> PlatformCatalogResponse:
         platforms=[PlatformInfo(**entry) for entry in PLATFORM_CATALOG],
         count=SUPPORTED_PLATFORM_COUNT,
     )
+
+
+@app.get("/ingest/status", response_model=IngestStatusResponse)
+async def ingest_status() -> IngestStatusResponse:
+    """Live scrape pipeline status — when data was last refreshed."""
+
+    try:
+        data = await db.get_ingest_status()
+        return IngestStatusResponse(**data)
+    except Exception as exc:
+        logger.exception("Failed to read ingest status")
+        raise HTTPException(status_code=500, detail="Failed to read ingest status") from exc
 
 
 @app.get("/stats", response_model=StatsResponse)
