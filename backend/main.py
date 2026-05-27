@@ -18,12 +18,9 @@ from models import (
     Campaign,
     CampaignsResponse,
     CategoriesResponse,
-    CheckoutConfigResponse,
     HealthResponse,
     IngestStatusResponse,
     LiveSearchResponse,
-    LinkCheckoutRequest,
-    LinkCheckoutResponse,
     PlatformCatalogResponse,
     PlatformInfo,
     PlatformsResponse,
@@ -31,7 +28,6 @@ from models import (
     StatsResponse,
 )
 from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
-import stripe_checkout
 from search_bridge import run_live_search_subprocess
 
 
@@ -267,62 +263,6 @@ async def stats() -> StatsResponse:
     except Exception as exc:
         logger.exception("Failed to read stats")
         raise HTTPException(status_code=500, detail="Failed to read stats") from exc
-
-
-def _frontend_base_url() -> str:
-    """Base URL for Stripe success/cancel redirects."""
-
-    return os.getenv("GIVEFUND_FRONTEND_URL", "http://127.0.0.1:5500").rstrip("/")
-
-
-@app.get("/checkout/config", response_model=CheckoutConfigResponse)
-async def checkout_config() -> CheckoutConfigResponse:
-    """Report whether Stripe Link checkout is configured."""
-
-    return CheckoutConfigResponse(
-        enabled=stripe_checkout.is_configured(),
-        publishable_key=stripe_checkout.get_publishable_key(),
-        default_tip_cents=stripe_checkout.DEFAULT_TIP_CENTS,
-        min_tip_cents=stripe_checkout.MIN_TIP_CENTS,
-        max_tip_cents=stripe_checkout.MAX_TIP_CENTS,
-    )
-
-
-@app.post("/checkout/link-setup", response_model=LinkCheckoutResponse)
-async def checkout_link_setup(body: LinkCheckoutRequest) -> LinkCheckoutResponse:
-    """
-    Create Stripe Checkout for an optional GiveFund tip.
-
-    Completing checkout enrolls the donor in Stripe Link (when enabled on the
-    Stripe account). Does not route campaign donations through GiveFund.
-    """
-
-    if not stripe_checkout.is_configured():
-        raise HTTPException(
-            status_code=503,
-            detail="Stripe is not configured. Set STRIPE_SECRET_KEY to enable Link setup.",
-        )
-
-    base = _frontend_base_url()
-    success = body.success_url or f"{base}/checkout-success.html?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel = body.cancel_url or f"{base}/#faster-giving"
-
-    try:
-        result = stripe_checkout.create_link_setup_session(
-            email=body.email,
-            amount_cents=body.amount_cents,
-            success_url=success,
-            cancel_url=cancel,
-            campaign_id=body.campaign_id,
-        )
-    except Exception as exc:
-        logger.exception("Stripe checkout session failed")
-        raise HTTPException(
-            status_code=502,
-            detail="Failed to create checkout session",
-        ) from exc
-
-    return LinkCheckoutResponse(**result)
 
 
 @app.get("/health", response_model=HealthResponse)

@@ -607,107 +607,6 @@
       max-width: 220px;
     }
 
-    .donate-hint-link {
-      color: var(--accent);
-      max-width: 240px;
-    }
-
-    .link-band {
-      max-width: 720px;
-      margin: 0 auto 48px;
-      padding: 36px 40px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .link-band h2 {
-      margin: 0 0 8px;
-      font-family: var(--serif);
-      font-size: clamp(26px, 4vw, 34px);
-      font-weight: 400;
-    }
-
-    .link-band h2 em { font-style: italic; }
-
-    .link-band-lead {
-      margin: 0 0 20px;
-      font-size: 14px;
-      color: var(--muted);
-      line-height: 1.55;
-    }
-
-    .link-form {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 12px;
-      align-items: end;
-    }
-
-    @media (max-width: 600px) {
-      .link-form { grid-template-columns: 1fr; }
-    }
-
-    .link-field label {
-      display: block;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--muted);
-      margin-bottom: 6px;
-    }
-
-    .link-field input,
-    .link-field select {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: var(--bg);
-      color: var(--ink);
-    }
-
-    .link-tip-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 12px;
-      align-items: center;
-    }
-
-    .link-form-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .link-form .btn-primary {
-      border: none;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .link-form .btn-primary:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .link-status {
-      margin: 12px 0 0;
-      font-size: 13px;
-      color: var(--muted);
-    }
-
-    .link-status.error { color: var(--accent); }
-
-    .link-unconfigured {
-      padding: 14px 16px;
-      border-radius: 8px;
-      background: var(--pill-bg);
-      font-size: 13px;
-      color: var(--muted);
-    }
-
     .skeleton-card {
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
@@ -893,8 +792,7 @@
     @media (max-width: 768px) {
       .nav { padding: 16px 20px; }
       .nav-links { display: none; }
-      .hero, .metrics, .feed-section, .capabilities, .link-band, .faq, .cta-band { padding-left: 20px; padding-right: 20px; }
-      .link-band { margin-left: 20px; margin-right: 20px; }
+      .hero, .metrics, .feed-section, .capabilities, .faq, .cta-band { padding-left: 20px; padding-right: 20px; }
       .cta-band { margin-left: 20px; margin-right: 20px; }
       .metrics { grid-template-columns: 1fr; }
       .signal-card, .skeleton-card { grid-template-columns: 1fr; }
@@ -913,7 +811,6 @@
         <div class="nav-links">
           <a href="#campaigns">Campaigns</a>
           <a href="#platforms">Platforms</a>
-          <a href="#faster-giving">Faster giving</a>
           <a href="#faq">FAQ</a>
         </div>
       </div>
@@ -925,7 +822,7 @@
       <div class="hero-inner">
         <h1><em>Find the help</em> someone needs — across every crowdfunding platform.</h1>
         <p class="hero-lead">
-          GiveFund turns scattered campaigns into one searchable feed. Discover real people, sort by who needs you most, and give on the platform they chose.
+          GiveFund turns scattered campaigns into one searchable feed — always free, no accounts, no tips. Discover real people, sort by who needs you most, and give on the platform they chose.
         </p>
         <div class="hero-actions">
           <a class="btn-primary" href="#campaigns">See live campaigns</a>
@@ -1018,39 +915,9 @@
       <div id="emptyState" class="empty hidden">No campaigns found. Try a different search or filter.</div>
     </section>
 
-    <section id="faster-giving" class="link-band" aria-labelledby="linkBandTitle">
-      <h2 id="linkBandTitle">Save your card once with <em>Stripe Link</em></h2>
-      <p class="link-band-lead">
-        Optional tip to support GiveFund (from $1). Checkout enrolls you in Stripe Link so many sites — including some GoFundMe and Givebutter flows — can autofill your card when you use the <strong>same email</strong>. Campaign gifts still complete on the original platform.
-      </p>
-      <div id="linkUnconfigured" class="link-unconfigured hidden">
-        Link setup is not enabled on this server yet. Add <code>STRIPE_SECRET_KEY</code> to the API environment to turn it on.
-      </div>
-      <form id="linkSetupForm" class="link-form hidden" novalidate>
-        <div class="link-field">
-          <label for="linkEmail">Email for Link</label>
-          <input id="linkEmail" type="email" name="email" required autocomplete="email" placeholder="you@example.com">
-        </div>
-        <div class="link-form-actions">
-          <div class="link-field">
-            <label for="linkAmount">Optional tip</label>
-            <select id="linkAmount" name="amount" aria-label="Tip amount">
-              <option value="100">$1 — save card only</option>
-              <option value="300">$3</option>
-              <option value="500" selected>$5</option>
-              <option value="1000">$10</option>
-              <option value="2500">$25</option>
-            </select>
-          </div>
-          <button type="submit" class="btn-primary" id="linkSubmitBtn">Continue to secure checkout</button>
-        </div>
-      </form>
-      <p id="linkStatus" class="link-status hidden" role="status"></p>
-    </section>
-
     <section class="cta-band">
-      <h2>Discovery that stays <em>open</em></h2>
-      <p>No accounts, no platform lock-in. GiveFund is a public index — you give where the campaign already lives.</p>
+      <h2>Discovery that stays <em>free</em></h2>
+      <p>No accounts, no fees, no donations to us. GiveFund is a public index — you give where the campaign already lives.</p>
       <a class="btn-primary" href="#campaigns">Browse campaigns</a>
     </section>
 
@@ -1066,36 +933,23 @@
       </div>
       <div class="faq-item">
         <strong>Do you handle campaign payments?</strong>
-        <p>No. “Give now” always opens the original fundraiser on their platform. GiveFund never holds or routes money for campaigns.</p>
+        <p>No. “Give now” always opens the original fundraiser on their platform. GiveFund never holds or routes money for campaigns — and we never ask for tips or donations to GiveFund.</p>
       </div>
       <div class="faq-item">
-        <strong>What is Stripe Link?</strong>
-        <p>Stripe Link is a secure wallet that saves your card with Stripe (not GiveFund). If you enroll via our optional checkout, use the <strong>same email</strong> when you donate on GoFundMe, Givebutter, Donorbox, or other Link-enabled checkouts — you may see Link and skip re-entering your card. LaunchGood and some GoFundMe paths do not support Link.</p>
-      </div>
-      <div class="faq-item">
-        <strong>Why the optional tip?</strong>
-        <p>It keeps discovery free and creates a real Stripe checkout so Link can save your payment details. You can choose $1 if you only want Link enrollment.</p>
+        <strong>Is GiveFund really free?</strong>
+        <p>Yes. There are no accounts, no paywalls, and no voluntary payments to us. We’re a discovery layer; your gift goes entirely through the platform hosting the fundraiser.</p>
       </div>
     </section>
 
     <footer class="footer">
       <div class="logo">GiveFund</div>
-      <p>Public crowdfunding discovery — no accounts, no fees on our side.</p>
+      <p>Free public crowdfunding discovery — no accounts, no fees, no donations to GiveFund.</p>
     </footer>
   </div>
 
   <script src="config.js"></script>
   <script>
     const API_URL = window.GIVEFUND_API_URL || "http://localhost:8000";
-    const FRONTEND_URL = (window.GIVEFUND_FRONTEND_URL || window.location.origin).replace(/\/$/, "");
-
-    /** Platforms where Stripe Link may appear at checkout (see BYPASS_RESEARCH.md). */
-    const LINK_FRIENDLY_PLATFORMS = new Set([
-      "gofundme",
-      "givebutter",
-      "donorbox",
-      "fundly"
-    ]);
 
     const PLATFORM_CATALOG = [
       { id: "gofundme", label: "GoFundMe" },
@@ -1276,77 +1130,6 @@
       return appendReferralUtm(target, campaign);
     }
 
-    function setLinkStatus(message, isError) {
-      const el = $("#linkStatus");
-      if (!message) {
-        el.classList.add("hidden");
-        el.textContent = "";
-        return;
-      }
-      el.textContent = message;
-      el.classList.toggle("error", Boolean(isError));
-      el.classList.remove("hidden");
-    }
-
-    async function initLinkSetup() {
-      const form = $("#linkSetupForm");
-      const unconfigured = $("#linkUnconfigured");
-      const savedEmail = localStorage.getItem("givefund_donor_email");
-      if (savedEmail) $("#linkEmail").value = savedEmail;
-
-      let enabled = false;
-      try {
-        const res = await fetch(`${API_URL}/checkout/config`);
-        if (res.ok) {
-          const data = await res.json();
-          enabled = Boolean(data.enabled);
-        }
-      } catch {
-        /* API offline */
-      }
-
-      if (enabled) {
-        form.classList.remove("hidden");
-        unconfigured.classList.add("hidden");
-      } else {
-        form.classList.add("hidden");
-        unconfigured.classList.remove("hidden");
-      }
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if (!enabled) return;
-
-        const email = $("#linkEmail").value.trim();
-        const amountCents = parseInt($("#linkAmount").value, 10) || 500;
-        const btn = $("#linkSubmitBtn");
-        btn.disabled = true;
-        setLinkStatus("Redirecting to secure checkout…", false);
-
-        try {
-          const res = await fetch(`${API_URL}/checkout/link-setup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email,
-              amount_cents: amountCents,
-              success_url: `${FRONTEND_URL}/checkout-success.html?session_id={CHECKOUT_SESSION_ID}`,
-              cancel_url: `${FRONTEND_URL}/#faster-giving`
-            })
-          });
-          const data = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            throw new Error(data.detail || `Checkout failed (${res.status})`);
-          }
-          localStorage.setItem("givefund_donor_email", email);
-          window.location.href = data.url;
-        } catch (err) {
-          setLinkStatus(err.message || "Could not start checkout.", true);
-          btn.disabled = false;
-        }
-      });
-    }
-
     function formatMoney(amount) {
       return new Intl.NumberFormat("en-US", {
         style: "currency",
@@ -1514,10 +1297,6 @@
       const location = c.location ? `<span class="tag">${escapeHtml(c.location)}</span>` : "";
       const plat = platformLabel(c.platform);
       const donateUrl = buildDonateUrl(c);
-      const linkHint = LINK_FRIENDLY_PLATFORMS.has(String(c.platform || "").toLowerCase())
-        ? `<p class="donate-hint donate-hint-link">Same email → Stripe Link may autofill on ${escapeHtml(plat)}</p>`
-        : "";
-
       return `
         <article class="signal-card">
           <div class="signal-media">
@@ -1546,7 +1325,6 @@
                   Give now →
                 </a>
                 <p class="donate-hint">Completes on ${escapeHtml(plat)}</p>
-                ${linkHint}
                 ${c.scraped_at ? `<p class="card-updated">Indexed ${escapeHtml(formatRelativeTime(c.scraped_at))}</p>` : ""}
               </div>
             </div>
@@ -1671,7 +1449,6 @@
     }
 
     bindEvents();
-    initLinkSetup();
     loadCatalog().then(() => {
       fetchStats();
       fetchIngestStatus();

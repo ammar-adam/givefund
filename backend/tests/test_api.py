@@ -146,30 +146,3 @@ def test_invalid_page_returns_422(client):
     assert response.status_code == 422
     assert "detail" in response.json()
 
-
-def test_checkout_config(client):
-    """Checkout config reports Stripe availability."""
-    response = client.get("/checkout/config")
-    assert response.status_code == 200
-    data = response.json()
-    assert "enabled" in data
-    assert data["default_tip_cents"] == 500
-    assert data["min_tip_cents"] == 100
-
-
-def test_checkout_link_setup_requires_stripe(client):
-    """Link setup returns 503 when Stripe keys are absent."""
-    response = client.post(
-        "/checkout/link-setup",
-        json={"email": "donor@example.com", "amount_cents": 500},
-    )
-    assert response.status_code == 503
-
-
-def test_checkout_link_setup_invalid_email(client):
-    """Invalid email returns 422."""
-    response = client.post(
-        "/checkout/link-setup",
-        json={"email": "x", "amount_cents": 500},
-    )
-    assert response.status_code == 422
