@@ -16,8 +16,7 @@ p = os.environ['DB_PATH']
 print(0 if not pathlib.Path(p).exists() else sqlite3.connect(p).execute('SELECT COUNT(*) FROM campaigns').fetchone()[0])" 2>/dev/null || echo 0)
 
 if [ "$COUNT" -lt "$MIN_CAMPAIGNS" ]; then
-  echo "Database below minimum ($COUNT < $MIN_CAMPAIGNS) — running scale ingest..."
-  echo "Database has $COUNT campaigns (min $MIN_CAMPAIGNS) — running scale ingest (10k target)..."
+  echo "Database has $COUNT campaigns (min $MIN_CAMPAIGNS) — running scale ingest..."
   cd scraper
   pip install -r requirements.txt -q 2>/dev/null || true
   playwright install chromium 2>/dev/null || true
