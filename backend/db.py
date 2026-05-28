@@ -250,6 +250,8 @@ async def get_stats() -> dict[str, Any]:
             "total_campaigns": 0,
             "total_raised": 0.0,
             "platforms": [],
+            "platforms_indexed": 0,
+            "platforms_supported": 0,
             "last_scraped": None,
         }
 
@@ -281,10 +283,20 @@ async def get_stats() -> dict[str, Any]:
     finally:
         await connection.close()
 
+    platform_list = [r[0] for r in platform_rows]
+    try:
+        from platforms_catalog import SUPPORTED_PLATFORM_COUNT
+
+        supported = SUPPORTED_PLATFORM_COUNT
+    except ImportError:
+        supported = len(platform_list)
+
     return {
         "total_campaigns": int(count_row["total_campaigns"] if count_row else 0),
         "total_raised": float(row["total_raised"] if row else 0),
-        "platforms": [r[0] for r in platform_rows],
+        "platforms": platform_list,
+        "platforms_indexed": len(platform_list),
+        "platforms_supported": supported,
         "last_scraped": row["last_scraped"] if row else None,
         "last_ingest_at": ingest.get("last_ingest_at"),
         "live_tracking": True,

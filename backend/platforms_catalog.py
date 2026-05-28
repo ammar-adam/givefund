@@ -20,6 +20,9 @@ PLATFORM_CATALOG: list[dict[str, str]] = [
     {"id": "globalgiving", "label": "GlobalGiving"},
     {"id": "donorbox", "label": "Donorbox"},
     {"id": "patreon", "label": "Patreon"},
+    {"id": "opencollective", "label": "Open Collective"},
+    {"id": "impactguru", "label": "ImpactGuru"},
+    {"id": "whydonate", "label": "WhyDonate"},
 ]
 
 SUPPORTED_PLATFORM_COUNT = len(PLATFORM_CATALOG)

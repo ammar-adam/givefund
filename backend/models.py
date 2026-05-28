@@ -62,9 +62,33 @@ class StatsResponse(BaseModel):
     total_campaigns: int
     total_raised: float
     platforms: list[str]
+    platforms_indexed: int = 0
+    platforms_supported: int = 0
     last_scraped: str | None = None
     last_ingest_at: str | None = None
     live_tracking: bool = True
+
+
+class WalletConfigResponse(BaseModel):
+    """Whether saved-card setup via Stripe is available."""
+
+    enabled: bool
+    publishable_key: str | None = None
+
+
+class WalletSetupRequest(BaseModel):
+    """Start Stripe Checkout (setup mode) to save a card — no charge."""
+
+    email: str = Field(min_length=3, max_length=320)
+    success_url: str | None = None
+    cancel_url: str | None = None
+
+
+class WalletSetupResponse(BaseModel):
+    """Redirect to Stripe-hosted setup."""
+
+    session_id: str
+    url: str
 
 
 class PlatformIngestStat(BaseModel):

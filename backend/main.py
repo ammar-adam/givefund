@@ -22,6 +22,9 @@ from models import (
     IngestStatusResponse,
     LiveSearchResponse,
     PlatformCatalogResponse,
+    WalletConfigResponse,
+    WalletSetupRequest,
+    WalletSetupResponse,
     PlatformInfo,
     PlatformsResponse,
     SortBy,
@@ -29,6 +32,8 @@ from models import (
 )
 from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
 from search_bridge import run_live_search_subprocess
+from search_fast import run_fast_search
+import stripe_wallet
 
 
 load_dotenv()
@@ -116,6 +121,48 @@ def _campaign_from_row_dict(row: dict, row_id: int) -> Campaign:
     )
 
 
+@app.get("/search/fast", response_model=LiveSearchResponse)
+async def search_fast(
+    q: str = Query(min_length=2, max_length=120),
+    limit: int = Query(default=80, ge=5, le=100),
+    merge_db: bool = Query(default=True),
+) -> LiveSearchResponse:
+    """Quick search: local index + GoFundMe Algolia (seconds, no full browser scrape)."""
+    try:
+        raw = await run_fast_search(q, limit=limit)
+    except Exception as exc:
+        logger.exception("fast search failed")
+        raise HTTPException(status_code=500, detail="Fast search failed") from exc
+
+    merged: dict[str, Campaign] = {}
+    if merge_db:
+        db_rows, total_db, _ = await db.get_campaigns(
+            search=q, page=1, page_size=limit, sort_by="most_needed"
+        )
+        for c in db_rows:
+            merged[c.campaign_url] = c
+        _ = total_db
+
+    base_id = 900_000_000
+    for row in raw.get("campaigns") or []:
+        url = row.get("campaign_url")
+        if not url:
+            continue
+        merged[url] = _campaign_from_row_dict(row, base_id + (abs(hash(url)) % 99_000_000))
+
+    campaigns = list(merged.values())[:limit]
+    live_count = len(raw.get("campaigns") or [])
+    return LiveSearchResponse(
+        query=q,
+        campaigns=campaigns,
+        total=len(campaigns),
+        live_count=live_count,
+        cached_count=max(0, len(campaigns) - live_count),
+        by_platform=raw.get("by_platform") or {},
+        error=raw.get("error"),
+    )
+
+
 @app.get("/search/live", response_model=LiveSearchResponse)
 async def search_live(
     q: str = Query(min_length=2, max_length=120),
@@ -175,7 +222,7 @@ async def list_campaigns(
     platform: str | None = Query(default=None),
     sort_by: SortBy = Query(default="most_needed"),
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1, le=100),
+    page_size: int = Query(default=48, ge=1, le=100),
 ) -> CampaignsResponse:
     """Return campaigns filtered by search, category, platform, sort, and pagination."""
 
@@ -263,6 +310,40 @@ async def stats() -> StatsResponse:
     except Exception as exc:
         logger.exception("Failed to read stats")
         raise HTTPException(status_code=500, detail="Failed to read stats") from exc
+
+
+def _frontend_base_url() -> str:
+    return os.getenv("GIVEFUND_FRONTEND_URL", "http://127.0.0.1:5500").rstrip("/")
+
+
+@app.get("/wallet/config", response_model=WalletConfigResponse)
+async def wallet_config() -> WalletConfigResponse:
+    """Stripe setup-mode availability (save card, no charge)."""
+    return WalletConfigResponse(
+        enabled=stripe_wallet.is_configured(),
+        publishable_key=stripe_wallet.get_publishable_key(),
+    )
+
+
+@app.post("/wallet/setup", response_model=WalletSetupResponse)
+async def wallet_setup(body: WalletSetupRequest) -> WalletSetupResponse:
+    """Save payment method via Stripe Checkout (setup mode). No charge to the donor."""
+    if not stripe_wallet.is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Card save is not configured. Set STRIPE_SECRET_KEY on the API.",
+        )
+    base = _frontend_base_url()
+    try:
+        result = stripe_wallet.create_setup_session(
+            email=body.email,
+            success_url=body.success_url or f"{base}/wallet-success.html",
+            cancel_url=body.cancel_url or f"{base}/#wallet",
+        )
+    except Exception as exc:
+        logger.exception("wallet setup failed")
+        raise HTTPException(status_code=502, detail="Could not start card setup") from exc
+    return WalletSetupResponse(**result)
 
 
 @app.get("/health", response_model=HealthResponse)

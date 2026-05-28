@@ -229,6 +229,113 @@
 
     .search-input::placeholder { color: var(--muted-light); }
 
+    .search-panel {
+      display: flex;
+      gap: 10px;
+      max-width: 640px;
+      margin: 0 auto 12px;
+      align-items: stretch;
+    }
+
+    .search-panel .search-input { flex: 1; }
+
+    .search-panel .btn-search {
+      padding: 0 22px;
+      height: 52px;
+      border: none;
+      border-radius: var(--radius-pill);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .search-panel .btn-search:disabled { opacity: 0.6; cursor: wait; }
+
+    .results-meta {
+      text-align: center;
+      font-size: 14px;
+      color: var(--muted);
+      margin: 0 0 20px;
+    }
+
+    .results-meta strong { color: var(--ink); font-weight: 600; }
+
+    #searchStatus {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin: 0 0 8px;
+      min-height: 1.25em;
+    }
+
+    #searchStatus.busy { color: var(--accent); }
+
+    .load-more-wrap { text-align: center; margin: 28px 0 8px; }
+
+    .btn-load-more {
+      padding: 12px 28px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .wallet-band {
+      max-width: 640px;
+      margin: 0 auto 40px;
+      padding: 28px 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .wallet-band h2 {
+      margin: 0 0 8px;
+      font-family: var(--serif);
+      font-size: 26px;
+      font-weight: 400;
+    }
+
+    .wallet-band h2 em { font-style: italic; }
+
+    .wallet-band > p {
+      margin: 0 0 16px;
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .wallet-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .wallet-form input {
+      flex: 1;
+      min-width: 200px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .wallet-form button {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      background: var(--ink);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .wallet-note { margin-top: 12px; font-size: 12px; color: var(--muted-light); }
+
     .marquee-section {
       padding: 32px 0 48px;
       border-top: 1px solid var(--border-soft);
@@ -826,10 +933,7 @@
         </p>
         <div class="hero-actions">
           <a class="btn-primary" href="#campaigns">See live campaigns</a>
-          <a class="btn-ghost" href="#platforms">12 platforms</a>
-        </div>
-        <div class="search-wrap">
-          <input id="searchInput" class="search-input" type="search" placeholder="Search by name, cause, or story…" aria-label="Search campaigns">
+          <a class="btn-ghost" href="#platforms" id="heroPlatformLink">20+ platforms</a>
         </div>
       </div>
     </header>
@@ -842,7 +946,7 @@
     <section class="capabilities" aria-label="Core capabilities">
       <article class="cap-card">
         <h3>One search</h3>
-        <p>GoFundMe, LaunchGood, JustGiving, Givebutter, and eight more — surfaced in a single, calm discovery experience.</p>
+        <p>Search tens of thousands of fundraisers from GoFundMe, LaunchGood, and 20+ other sources in one place.</p>
       </article>
       <article class="cap-card">
         <h3>Most needed first</h3>
@@ -864,15 +968,21 @@
         <span class="metric-label">Total raised tracked</span>
       </div>
       <div class="metric">
-        <span class="metric-value" id="platformCount">12</span>
-        <span class="metric-label">Platforms supported</span>
+        <span class="metric-value" id="platformCount">—</span>
+        <span class="metric-label">Platforms in index</span>
       </div>
     </section>
 
     <section id="campaigns" class="feed-section">
       <div class="feed-header">
-        <h2>Live campaigns</h2>
-        <p>Updated from public listings. Filter by cause, platform, or how urgently funds are still needed.</p>
+        <h2>Search campaigns</h2>
+        <p>Type a cause, name, or place — we search our index of <strong id="feedIndexCount">—</strong> fundraisers first, then GoFundMe live.</p>
+        <div class="search-panel">
+          <input id="searchInput" class="search-input" type="search" placeholder="e.g. cancer, Palestine, medical bills…" aria-label="Search campaigns" autocomplete="off">
+          <button type="button" class="btn-search" id="searchBtn">Search</button>
+        </div>
+        <p id="searchStatus" aria-live="polite"></p>
+        <p id="resultsMeta" class="results-meta"></p>
         <p id="liveStatus" class="live-status" aria-live="polite">
           <span class="live-dot" id="liveDot" aria-hidden="true"></span>
           <span id="liveStatusText">Connecting to live index…</span>
@@ -912,7 +1022,29 @@
       </div>
 
       <div id="campaignGrid" class="feed"></div>
-      <div id="emptyState" class="empty hidden">No campaigns found. Try a different search or filter.</div>
+      <div id="emptyState" class="empty hidden">
+        No campaigns match. Try a shorter keyword, clear filters, or search “medical” / “emergency”.
+      </div>
+      <div class="load-more-wrap">
+        <button type="button" class="btn-load-more hidden" id="loadMoreBtn">Load more campaigns</button>
+      </div>
+    </section>
+
+    <section id="wallet" class="wallet-band" aria-labelledby="walletTitle">
+      <h2 id="walletTitle">Save your card <em>(optional)</em></h2>
+      <p>
+        Free service — we never charge you. If you choose to save a card, Stripe stores it securely (Stripe Link).
+        On some sites that show Link at checkout, the <strong>same email</strong> may autofill your card.
+        GiveFund cannot apply your card on GoFundMe or LaunchGood; you still complete payment on their site.
+      </p>
+      <div id="walletUnconfigured" class="wallet-note hidden">
+        Card save is off until <code>STRIPE_SECRET_KEY</code> is set on the API.
+      </div>
+      <form id="walletForm" class="wallet-form hidden" novalidate>
+        <input id="walletEmail" type="email" required placeholder="Email for Stripe Link" autocomplete="email">
+        <button type="submit" id="walletSubmitBtn">Save card securely</button>
+      </form>
+      <p id="walletStatus" class="wallet-note hidden" role="status"></p>
     </section>
 
     <section class="cta-band">
@@ -937,7 +1069,11 @@
       </div>
       <div class="faq-item">
         <strong>Is GiveFund really free?</strong>
-        <p>Yes. There are no accounts, no paywalls, and no voluntary payments to us. We’re a discovery layer; your gift goes entirely through the platform hosting the fundraiser.</p>
+        <p>Yes. There are no accounts, no paywalls, and no payments to us. We’re a discovery layer; your gift goes entirely through the platform hosting the fundraiser.</p>
+      </div>
+      <div class="faq-item">
+        <strong>Can GiveFund pay with my saved card?</strong>
+        <p>No. We can’t pass payment tokens to GoFundMe, LaunchGood, or other hosts. Optional card save is only for Stripe Link on sites that support it — you always finish checkout on the original platform.</p>
       </div>
     </section>
 
@@ -998,10 +1134,15 @@
       platform: "",
       search: "",
       sortBy: "most_needed",
+      page: 1,
+      pageSize: 48,
+      total: 0,
+      pages: 0,
       usingMock: false,
       liveSearch: false,
       catalog: PLATFORM_CATALOG,
-      refreshIntervalMs: 120000
+      refreshIntervalMs: 120000,
+      stats: { total_campaigns: 0, platforms_indexed: 0, platforms_supported: 0 }
     };
 
     const $ = (sel) => document.querySelector(sel);
@@ -1037,17 +1178,44 @@
       return 0.45;
     }
 
-    async function fetchPlatformCount() {
-      try {
-        const res = await fetch(`${API_URL}/platforms`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.platforms?.length) return data.platforms.length;
-        }
-      } catch {
-        /* fall through */
+    function setSearchStatus(msg, busy) {
+      const el = $("#searchStatus");
+      el.textContent = msg || "";
+      el.classList.toggle("busy", Boolean(busy));
+    }
+
+    function updateResultsMeta() {
+      const meta = $("#resultsMeta");
+      const shown = state.campaigns.length;
+      const total = state.total || shown;
+      if (state.usingMock) {
+        meta.textContent = `Showing ${shown} sample campaigns — connect API for full index`;
+        return;
       }
-      return new Set(MOCK_CAMPAIGNS.map((c) => c.platform)).size;
+      if (!shown) {
+        meta.textContent = state.search
+          ? `No results for “${state.search}” in the index`
+          : "";
+        return;
+      }
+      const rangeEnd = Math.min(state.page * state.pageSize, total);
+      meta.innerHTML = state.search
+        ? `Showing <strong>${shown}</strong> of <strong>${total.toLocaleString()}</strong> matches for “${escapeHtml(state.search)}”`
+        : `Showing <strong>1–${rangeEnd}</strong> of <strong>${total.toLocaleString()}</strong> campaigns`;
+      const btn = $("#loadMoreBtn");
+      if (state.page < state.pages && !state.liveSearch) {
+        btn.classList.remove("hidden");
+        btn.textContent = `Load more (${total.toLocaleString()} total)`;
+      } else {
+        btn.classList.add("hidden");
+      }
+    }
+
+    function mergeCampaignsByUrl(existing, incoming) {
+      const map = new Map();
+      for (const c of existing) map.set(c.campaign_url, c);
+      for (const c of incoming) map.set(c.campaign_url, c);
+      return [...map.values()];
     }
 
     function appendReferralUtm(urlString, campaign) {
@@ -1236,10 +1404,10 @@
         `${state.catalog.length} sources including ${names} — with discover scrapers added over time.`;
     }
 
-    function buildCampaignUrl() {
+    function buildCampaignUrl(page) {
       const url = new URL("/campaigns", API_URL);
-      url.searchParams.set("page", "1");
-      url.searchParams.set("page_size", "20");
+      url.searchParams.set("page", String(page ?? state.page));
+      url.searchParams.set("page_size", String(state.pageSize));
       url.searchParams.set("sort_by", state.sortBy);
       if (state.search) url.searchParams.set("search", state.search);
       if (state.category) url.searchParams.set("category", state.category);
@@ -1347,94 +1515,192 @@
 
     async function fetchStats() {
       const metrics = $("#statsBar").querySelectorAll(".metric-value");
-      const platformCount = await fetchPlatformCount();
       try {
         const res = await fetch(`${API_URL}/stats`);
         if (!res.ok) throw new Error("stats failed");
         const data = await res.json();
+        state.stats = data;
         metrics[0].textContent = data.total_campaigns.toLocaleString();
         metrics[1].textContent = formatMoney(data.total_raised);
-        metrics[2].textContent = String(platformCount);
+        const inIndex = data.platforms_indexed ?? data.platforms?.length ?? 0;
+        const supported = data.platforms_supported ?? state.catalog.length;
+        metrics[2].textContent = `${inIndex} / ${supported}`;
+        $("#platformCount").textContent = `${inIndex} / ${supported}`;
+        $("#feedIndexCount").textContent = data.total_campaigns.toLocaleString();
+        $("#heroPlatformLink").textContent = `${supported}+ platforms`;
       } catch {
         const total = MOCK_CAMPAIGNS.reduce((s, c) => s + (c.raised_amount || 0), 0);
         metrics[0].textContent = String(MOCK_CAMPAIGNS.length);
         metrics[1].textContent = formatMoney(total);
-        metrics[2].textContent = String(platformCount);
+        metrics[2].textContent = "12";
+        $("#feedIndexCount").textContent = "sample";
       }
-      $("#platformCount").textContent = String(platformCount);
     }
 
-    async function fetchLiveSearch(query) {
-      const q = (query || "").trim();
-      if (q.length < 2) return null;
+    async function fetchFromIndex() {
+      const res = await fetch(buildCampaignUrl(1));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      state.page = data.page || 1;
+      state.total = data.total ?? 0;
+      state.pages = data.pages ?? 0;
+      return data.campaigns || [];
+    }
+
+    async function fetchFastSearch(query) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 90000);
       try {
         const res = await fetch(
-          `${API_URL}/search/live?q=${encodeURIComponent(q)}&limit=80&merge_db=true`
+          `${API_URL}/search/fast?q=${encodeURIComponent(query)}&limit=80&merge_db=true`,
+          { signal: controller.signal }
         );
         if (!res.ok) return null;
         return await res.json();
       } catch {
         return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function runSearch() {
+      state.search = $("#searchInput").value.trim();
+      state.page = 1;
+      renderSkeletons();
+      state.liveSearch = false;
+      $("#liveSearchBanner").classList.add("hidden");
+      $("#loadMoreBtn").classList.add("hidden");
+      const q = state.search;
+
+      try {
+        setSearchStatus("Searching local index…", true);
+        let campaigns = await fetchFromIndex();
+        state.campaigns = campaigns;
+        state.usingMock = false;
+        $("#mockBanner").classList.add("hidden");
+        updateResultsMeta();
+        renderGrid();
+
+        if (q.length >= 2) {
+          setSearchStatus("Searching GoFundMe live (may take up to a minute)…", true);
+          const fast = await fetchFastSearch(q);
+          if (fast?.campaigns?.length) {
+            state.campaigns = fast.campaigns;
+            state.total = fast.total;
+            state.liveSearch = true;
+            state.pages = 1;
+            const parts = Object.entries(fast.by_platform || {})
+              .filter(([, n]) => n > 0)
+              .map(([p, n]) => `${platformLabel(p)} (${n})`)
+              .join(", ");
+            $("#liveSearchBanner").textContent = parts
+              ? `Expanded search · ${fast.total} results · ${parts}`
+              : `Expanded search · ${fast.total} results`;
+            $("#liveSearchBanner").classList.remove("hidden");
+            setSearchStatus("");
+          } else if (campaigns.length) {
+            setSearchStatus(`Showing index results only. Live expand returned no extra matches.`);
+          } else {
+            setSearchStatus("No matches yet — try another keyword or clear filters.");
+          }
+        } else {
+          setSearchStatus("");
+        }
+      } catch (err) {
+        console.warn("API unavailable, using mock data", err);
+        state.campaigns = filterMock(MOCK_CAMPAIGNS);
+        state.total = state.campaigns.length;
+        state.usingMock = true;
+        $("#mockBanner").classList.remove("hidden");
+        setSearchStatus("");
+      }
+      updateResultsMeta();
+      renderGrid();
+    }
+
+    async function loadMoreCampaigns() {
+      if (state.page >= state.pages || state.liveSearch) return;
+      $("#loadMoreBtn").disabled = true;
+      try {
+        const next = state.page + 1;
+        const res = await fetch(buildCampaignUrl(next));
+        if (!res.ok) throw new Error("load more failed");
+        const data = await res.json();
+        state.page = data.page;
+        state.campaigns = [...state.campaigns, ...(data.campaigns || [])];
+        updateResultsMeta();
+        renderGrid();
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        $("#loadMoreBtn").disabled = false;
       }
     }
 
     async function fetchCampaigns() {
-      renderSkeletons();
-      state.liveSearch = false;
-      $("#liveSearchBanner").classList.add("hidden");
-      const q = state.search.trim();
+      await runSearch();
+    }
 
-      if (q.length >= 2) {
-        const live = await fetchLiveSearch(q);
-        if (live && (live.campaigns || []).length) {
-          state.campaigns = live.campaigns;
-          state.usingMock = false;
-          state.liveSearch = true;
-          $("#mockBanner").classList.add("hidden");
-          const platforms = Object.entries(live.by_platform || {})
-            .filter(([, n]) => n > 0)
-            .map(([p, n]) => `${p} (${n})`)
-            .join(", ");
-          const banner = $("#liveSearchBanner");
-          banner.textContent = platforms
-            ? `Live search · ${live.total} results · ${platforms}`
-            : `Live search · ${live.total} results across platforms`;
-          banner.classList.remove("hidden");
-          renderGrid();
-          return;
-        }
-      }
-
+    async function initWallet() {
+      const form = $("#walletForm");
+      const unconfigured = $("#walletUnconfigured");
       try {
-        const res = await fetch(buildCampaignUrl());
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        state.campaigns = data.campaigns || [];
-        state.usingMock = false;
-        $("#mockBanner").classList.add("hidden");
-      } catch (err) {
-        console.warn("API unavailable, using mock data", err);
-        state.campaigns = filterMock(MOCK_CAMPAIGNS);
-        state.usingMock = true;
-        $("#mockBanner").classList.remove("hidden");
+        const res = await fetch(`${API_URL}/wallet/config`);
+        const data = res.ok ? await res.json() : { enabled: false };
+        if (data.enabled) {
+          form.classList.remove("hidden");
+          unconfigured.classList.add("hidden");
+        } else {
+          form.classList.add("hidden");
+          unconfigured.classList.remove("hidden");
+        }
+      } catch {
+        unconfigured.classList.remove("hidden");
       }
-      renderGrid();
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = $("#walletEmail").value.trim();
+        const status = $("#walletStatus");
+        status.classList.remove("hidden");
+        status.textContent = "Redirecting to Stripe…";
+        try {
+          const res = await fetch(`${API_URL}/wallet/setup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              success_url: `${window.location.origin}/wallet-success.html`,
+              cancel_url: `${window.location.origin}/#wallet`
+            })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Setup failed");
+          window.location.href = data.url;
+        } catch (err) {
+          status.textContent = err.message || "Could not start card setup.";
+        }
+      });
     }
 
     function bindEvents() {
-      $("#searchInput").addEventListener("input", debounce(() => {
-        state.search = $("#searchInput").value.trim();
-        fetchCampaigns();
-      }, 400));
+      $("#searchBtn").addEventListener("click", () => runSearch());
+      $("#searchInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          runSearch();
+        }
+      });
+      $("#loadMoreBtn").addEventListener("click", () => loadMoreCampaigns());
 
       $("#sortSelect").addEventListener("change", (e) => {
         state.sortBy = e.target.value;
-        fetchCampaigns();
+        runSearch();
       });
 
       $("#platformSelect").addEventListener("change", (e) => {
         state.platform = e.target.value;
-        fetchCampaigns();
+        runSearch();
       });
 
       document.querySelectorAll(".pill").forEach((pill) => {
@@ -1443,12 +1709,13 @@
           document.querySelectorAll(".pill").forEach((p) => {
             p.setAttribute("aria-pressed", String(p === pill));
           });
-          fetchCampaigns();
+          runSearch();
         });
       });
     }
 
     bindEvents();
+    initWallet();
     loadCatalog().then(() => {
       fetchStats();
       fetchIngestStatus();
