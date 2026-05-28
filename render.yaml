@@ -19,9 +19,9 @@ services:
       - key: DB_PATH
         value: /var/data/givefund.db
       - key: DB_DOWNLOAD_URL
-        sync: false
+        value: https://github.com/ammar-adam/givefund/releases/download/db-latest/givefund.db
       - key: SCRAPE_ON_START
-        value: "true"
+        value: "false"
       - key: MIN_CAMPAIGNS
         value: "10000"
       - key: GFM_ALGOLIA_ONLY

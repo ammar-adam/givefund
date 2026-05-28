@@ -18,6 +18,7 @@ from models import (
     Campaign,
     CampaignsResponse,
     CategoriesResponse,
+    CheckoutAssistResponse,
     HealthResponse,
     IngestStatusResponse,
     LiveSearchResponse,
@@ -34,6 +35,7 @@ from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
 from search_bridge import run_live_search_subprocess
 from search_fast import run_fast_search
 import stripe_wallet
+from deep_links import checkout_assist
 
 
 load_dotenv()
@@ -254,6 +256,28 @@ async def get_campaign(campaign_id: int) -> Campaign:
     if campaign is None:
         raise HTTPException(status_code=404, detail="Campaign not found")
     return campaign
+
+
+@app.get("/campaigns/{campaign_id}/checkout", response_model=CheckoutAssistResponse)
+async def campaign_checkout(
+    campaign_id: int,
+    email: str | None = Query(default=None, max_length=320),
+) -> CheckoutAssistResponse:
+    """
+    Express Give: lowest-friction donate URL for this campaign.
+    Optional email prefill where platforms allow it; Link hint when likely.
+    """
+    campaign = await db.get_campaign(campaign_id)
+    if campaign is None:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    data = checkout_assist(
+        platform=campaign.platform,
+        campaign_url=campaign.campaign_url,
+        campaign_id=campaign.id,
+        title=campaign.title,
+        donor_email=email,
+    )
+    return CheckoutAssistResponse(**data)
 
 
 @app.get("/categories", response_model=CategoriesResponse)

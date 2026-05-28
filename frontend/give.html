@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Give — GiveFund</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="config.js"></script>
+  <style>
+    :root {
+      --bg: #f7f5f2;
+      --ink: #121212;
+      --muted: #5c5c5c;
+      --accent: #c45c4a;
+      --surface: #fff;
+      --border: #e8e4de;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 40px 24px 64px; }
+    h1 {
+      font-family: "Instrument Serif", serif;
+      font-weight: 400;
+      font-size: 2rem;
+      margin: 0 0 8px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    .platform { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .title { font-size: 1.25rem; font-weight: 600; margin: 8px 0; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    input[type=email] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .note { font-size: 14px; color: var(--muted); margin: 12px 0; }
+    .link-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #166534;
+      background: #dcfce7;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    .cta {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 16px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 999px;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .secondary {
+      display: block;
+      text-align: center;
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .warn {
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+      padding-top: 16px;
+    }
+    .back { color: var(--accent); text-decoration: none; font-size: 14px; }
+    .error { color: var(--accent); }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="index.html#campaigns">← Back to campaigns</a>
+    <h1>Express <em>give</em></h1>
+    <p class="note">We send you to the official checkout. GiveFund never touches your payment.</p>
+    <div id="loading" class="note">Loading campaign…</div>
+    <div id="content" class="hidden">
+      <div class="card">
+        <span class="platform" id="platformLabel"></span>
+        <p class="title" id="campaignTitle"></p>
+        <p class="note" id="checkoutNote"></p>
+        <p id="linkBadge" class="link-badge hidden">Stripe Link may autofill your card</p>
+        <label for="donorEmail">Your email (for checkout prefill + Link)</label>
+        <input id="donorEmail" type="email" placeholder="you@example.com" autocomplete="email">
+        <button type="button" class="cta" id="giveBtn">Continue to official checkout →</button>
+        <button type="button" class="secondary" id="copyEmailBtn" style="background:none;border:none;cursor:pointer;width:100%">
+          Copy email to clipboard
+        </button>
+        <p class="warn" id="limitNote"></p>
+      </div>
+      <p class="note">
+        <a href="index.html#wallet">Save your card with Stripe</a> (optional, free) so Link may work on more sites.
+      </p>
+    </div>
+    <p id="err" class="error hidden"></p>
+  </div>
+  <script>
+    const API = window.GIVEFUND_API_URL || "http://localhost:8000";
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const $ = (s) => document.querySelector(s);
+
+    async function load() {
+      if (!id) {
+        $("#err").textContent = "Missing campaign id.";
+        $("#err").classList.remove("hidden");
+        $("#loading").classList.add("hidden");
+        return;
+      }
+      const saved = localStorage.getItem("givefund_donor_email");
+      if (saved) $("#donorEmail").value = saved;
+
+      try {
+        const email = $("#donorEmail").value.trim();
+        const q = email ? `?email=${encodeURIComponent(email)}` : "";
+        const res = await fetch(`${API}/campaigns/${id}/checkout${q}`);
+        if (!res.ok) throw new Error("Campaign not found");
+        const data = await res.json();
+        $("#platformLabel").textContent = data.platform;
+        $("#campaignTitle").textContent = data.title || "Campaign";
+        $("#checkoutNote").textContent = data.checkout_note;
+        $("#limitNote").textContent = data.cannot_token_charge_reason;
+        if (data.link_likely) $("#linkBadge").classList.remove("hidden");
+        $("#giveBtn").onclick = () => openCheckout(data);
+        $("#copyEmailBtn").onclick = () => {
+          const em = $("#donorEmail").value.trim();
+          if (em) navigator.clipboard.writeText(em);
+        };
+        $("#donorEmail").addEventListener("change", () => refreshCheckout(data));
+        $("#loading").classList.add("hidden");
+        $("#content").classList.remove("hidden");
+        window.__checkout = data;
+      } catch (e) {
+        $("#loading").classList.add("hidden");
+        $("#err").textContent = e.message || "Failed to load";
+        $("#err").classList.remove("hidden");
+      }
+    }
+
+    async function refreshCheckout(prev) {
+      const email = $("#donorEmail").value.trim();
+      localStorage.setItem("givefund_donor_email", email);
+      const q = email ? `?email=${encodeURIComponent(email)}` : "";
+      const res = await fetch(`${API}/campaigns/${id}/checkout${q}`);
+      if (res.ok) window.__checkout = await res.json();
+    }
+
+    function openCheckout(data) {
+      const email = $("#donorEmail").value.trim();
+      localStorage.setItem("givefund_donor_email", email);
+      if (window.__checkout) data = window.__checkout;
+      window.open(data.donate_url, "_blank", "noopener,noreferrer");
+    }
+
+    load();
+  </script>
+</body>
+</html>

@@ -91,6 +91,21 @@ class WalletSetupResponse(BaseModel):
     url: str
 
 
+class CheckoutAssistResponse(BaseModel):
+    """Express Give — optimized outbound checkout for one campaign."""
+
+    campaign_id: int
+    title: str | None = None
+    platform: str
+    donate_url: str
+    link_likely: bool = False
+    email_prefill_supported: bool = False
+    checkout_note: str
+    steps_saved_estimate: str
+    cannot_token_charge: bool = True
+    cannot_token_charge_reason: str
+
+
 class PlatformIngestStat(BaseModel):
     """Per-platform result from the latest ingest run."""
 

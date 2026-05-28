@@ -5,6 +5,9 @@ on:
     - cron: "0 */4 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -33,7 +36,18 @@ jobs:
           GLOBALGIVING_API_KEY: ${{ secrets.GLOBALGIVING_API_KEY }}
 
       - name: Report counts
-        run: sqlite3 givefund.db "SELECT platform, COUNT(*) FROM campaigns GROUP BY platform ORDER BY 2 DESC;"
+        run: python scripts/publish_db_release.py
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund.db
+
+      - name: Publish database to GitHub Release (Render DB_DOWNLOAD_URL)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view db-latest 2>/dev/null || gh release create db-latest \
+            --title "GiveFund campaign database" \
+            --notes "Automated snapshot from Live Scrape workflow. Set Render DB_DOWNLOAD_URL to this release asset."
+          gh release upload db-latest givefund.db db-manifest.json --clobber
 
       - name: Upload database artifact
         uses: actions/upload-artifact@v4
@@ -41,6 +55,10 @@ jobs:
           name: givefund-db
           path: givefund.db
           retention-days: 14
+
+      - name: Trigger Render deploy (optional)
+        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
+        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
 
       - name: Smoke test API
         run: |

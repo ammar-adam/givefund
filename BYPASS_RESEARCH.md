@@ -8,6 +8,22 @@
 
 ---
 
+## Shipped product path (May 2026)
+
+What we **can** ship without breaking ToS or platform APIs:
+
+| Feature | Path | Value |
+|---------|------|--------|
+| **Express Give** | `give.html` + `GET /campaigns/{id}/checkout` | Deep `/donate` links, email prefill (Givebutter, Donorbox, …), Link hints |
+| **Stripe wallet** | `POST /wallet/setup` (setup mode, **no charge**) | Seeds Stripe Link for other merchants |
+| **Discovery** | 24k+ index + live search | Finding the campaign (core value) |
+
+What we **cannot** ship: passing GiveFund's payment token into GoFundMe/LaunchGood checkout. No public API exists. True one-click requires **platform partnership** (Tier B) or **Pledge embed** for nonprofits only (`PLEDGE_RESEARCH.md`).
+
+There is no hidden technical bypass (extension, webview injection, VCN paste) that is both reliable and safe to operate as GiveFund.
+
+---
+
 ## Executive summary
 
 | Angle | Feasibility | Legal/ToS | Platform block risk | Build effort | Priority |

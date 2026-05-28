@@ -109,6 +109,17 @@ def test_platform_catalog(client):
     assert "justgiving" in ids
 
 
+def test_checkout_assist(client):
+    """Express Give checkout assist returns donate URL."""
+    response = client.get("/campaigns/1/checkout?email=donor@example.com")
+    assert response.status_code == 200
+    data = response.json()
+    assert "donate_url" in data
+    assert data["campaign_id"] == 1
+    assert "gofundme" in data["donate_url"] or data["platform"] == "gofundme"
+    assert data["cannot_token_charge"] is True
+
+
 def test_search_live_validation(client):
     """Live search requires at least 2 characters."""
     assert client.get("/search/live?q=a").status_code == 422

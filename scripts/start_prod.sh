@@ -4,9 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-python scripts/download_db.py || true
-
 export DB_PATH="${DB_PATH:-/var/data/givefund.db}"
+python scripts/download_db.py || true
 export LIVE_SCRAPE="${LIVE_SCRAPE:-true}"
 export SCRAPE_INTERVAL="${SCRAPE_INTERVAL:-1800}"
 export SCRAPE_ON_START="${SCRAPE_ON_START:-true}"
@@ -16,7 +15,8 @@ COUNT=$(python -c "import sqlite3, os, pathlib
 p = os.environ['DB_PATH']
 print(0 if not pathlib.Path(p).exists() else sqlite3.connect(p).execute('SELECT COUNT(*) FROM campaigns').fetchone()[0])" 2>/dev/null || echo 0)
 
-if [ "$SCRAPE_ON_START" = "true" ] && [ "$COUNT" -lt "$MIN_CAMPAIGNS" ]; then
+if [ "$COUNT" -lt "$MIN_CAMPAIGNS" ]; then
+  echo "Database below minimum ($COUNT < $MIN_CAMPAIGNS) — running scale ingest..."
   echo "Database has $COUNT campaigns (min $MIN_CAMPAIGNS) — running scale ingest (10k target)..."
   cd scraper
   pip install -r requirements.txt -q 2>/dev/null || true
