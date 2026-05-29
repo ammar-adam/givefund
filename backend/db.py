@@ -197,6 +197,35 @@ async def get_campaign(campaign_id: int) -> Campaign | None:
     return _campaign_from_row(row) if row else None
 
 
+async def get_campaigns_by_urls(urls: list[str]) -> list[Campaign]:
+    """Fetch campaigns matching exact URLs (after live search persist)."""
+
+    clean = [u.strip() for u in urls if u and u.strip()]
+    if not clean:
+        return []
+
+    connection = await connect_readonly()
+    if connection is None:
+        return []
+
+    try:
+        connection.row_factory = aiosqlite.Row
+        placeholders = ", ".join(f":u{i}" for i in range(len(clean)))
+        params = {f"u{i}": url for i, url in enumerate(clean)}
+        rows = await connection.execute_fetchall(
+            f"""
+            SELECT {_SELECT_COLUMNS}
+            FROM campaigns
+            WHERE campaign_url IN ({placeholders})
+            """,
+            params,
+        )
+    finally:
+        await connection.close()
+
+    return [_campaign_from_row(row) for row in rows]
+
+
 async def get_categories() -> list[str]:
     """Fetch distinct campaign categories."""
 

@@ -39,6 +39,7 @@ from models import (
 from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
 from search_bridge import run_live_search_subprocess
 from search_fast import run_fast_search
+from search_live import run_live_search as run_live_search_inprocess
 import donor_db
 import google_oauth
 import stripe_wallet
@@ -175,19 +176,30 @@ async def search_fast(
 @app.get("/search/live", response_model=LiveSearchResponse)
 async def search_live(
     q: str = Query(min_length=2, max_length=120),
-    limit: int = Query(default=50, ge=5, le=100),
-    persist: bool = Query(default=False),
+    limit: int = Query(default=80, ge=5, le=100),
+    persist: bool = Query(default=True),
     merge_db: bool = Query(default=True),
+    platform: str | None = Query(default=None, max_length=40),
 ) -> LiveSearchResponse:
     """
-    Live index: scrape/search all wired platforms for this query and return results.
-    Surfaces campaigns even if they were never bulk-ingested.
+    On-demand cross-platform search: scrapes all wired platforms for this query.
+    Called when a user searches — results are persisted by default for Give Now ids.
     """
+    platforms = [platform] if platform else None
     try:
-        raw = await run_live_search_subprocess(q, limit=limit, persist=persist)
+        raw = await run_live_search_inprocess(
+            q,
+            limit=limit,
+            platforms=platforms,
+            persist=persist,
+        )
     except Exception as exc:
-        logger.exception("live search failed")
-        raise HTTPException(status_code=500, detail="Live search failed") from exc
+        logger.exception("live search failed, trying subprocess fallback")
+        try:
+            raw = await run_live_search_subprocess(q, limit=limit, persist=persist)
+        except Exception as sub_exc:
+            logger.exception("live search subprocess fallback failed")
+            raise HTTPException(status_code=500, detail="Live search failed") from sub_exc
 
     live_rows = raw.get("campaigns") or []
     by_platform = raw.get("by_platform") or {}
@@ -196,7 +208,11 @@ async def search_live(
     if merge_db:
         try:
             db_rows, _, _ = await db.get_campaigns(
-                search=q, page=1, page_size=limit, sort_by="most_needed"
+                search=q,
+                page=1,
+                page_size=limit,
+                sort_by="most_needed",
+                platform=platform,
             )
             for c in db_rows:
                 merged[c.campaign_url] = c
@@ -204,12 +220,20 @@ async def search_live(
             logger.warning("DB merge for live search skipped")
 
     base_id = 900_000_000
-    for i, row in enumerate(live_rows):
+    for row in live_rows:
         url = row.get("campaign_url")
         if not url:
             continue
         synthetic_id = base_id + (abs(hash(url)) % 99_000_000)
         merged[url] = _campaign_from_row_dict(row, synthetic_id)
+
+    if persist and live_rows:
+        urls = [r.get("campaign_url") for r in live_rows if r.get("campaign_url")]
+        try:
+            for c in await db.get_campaigns_by_urls(urls):
+                merged[c.campaign_url] = c
+        except Exception:
+            logger.warning("Could not resolve persisted campaign ids")
 
     campaigns = list(merged.values())[:limit]
     return LiveSearchResponse(

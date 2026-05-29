@@ -1560,7 +1560,71 @@
       }
     }
 
+    async function fetchLiveSearch(query) {
+      const params = new URLSearchParams({
+        q: query,
+        limit: "80",
+        merge_db: "true",
+        persist: "true",
+      });
+      if (state.platform) params.set("platform", state.platform);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 180000);
+      try {
+        const res = await fetch(`${API_URL}/search/live?${params}`, { signal: controller.signal });
+        if (!res.ok) return null;
+        return await res.json();
+      } catch {
+        return null;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    let searchGeneration = 0;
+
+    function filterClientCampaigns(list) {
+      let out = list || [];
+      if (state.category) {
+        out = out.filter((c) => (c.category || "").toLowerCase() === state.category);
+      }
+      if (state.platform) {
+        out = out.filter((c) => c.platform === state.platform);
+      }
+      return out;
+    }
+
+    function showLiveBanner(total, byPlatform, phase) {
+      const parts = Object.entries(byPlatform || {})
+        .filter(([, n]) => n > 0)
+        .map(([p, n]) => `${platformLabel(p)} (${n})`)
+        .join(", ");
+      const q = state.search;
+      if (phase === "live") {
+        $("#liveSearchBanner").textContent = parts
+          ? `Live scrape for “${q}” · ${total} results · ${parts}`
+          : `Live scrape for “${q}” · ${total} results`;
+      } else {
+        $("#liveSearchBanner").textContent = parts
+          ? `Quick results while live scrape runs · ${parts}`
+          : `Searching all platforms for “${q}”…`;
+      }
+      $("#liveSearchBanner").classList.remove("hidden");
+    }
+
+    function applySearchResults(payload, phase) {
+      const campaigns = filterClientCampaigns(payload.campaigns || []);
+      state.campaigns = campaigns;
+      state.total = payload.total ?? campaigns.length;
+      state.liveSearch = true;
+      state.pages = 1;
+      showLiveBanner(state.total, payload.by_platform, phase);
+      updateResultsMeta();
+      renderGrid();
+    }
+
     async function runSearch() {
+      const gen = ++searchGeneration;
       state.search = $("#searchInput").value.trim();
       state.page = 1;
       renderSkeletons();
@@ -1572,38 +1636,47 @@
       try {
         setSearchStatus("Searching local index…", true);
         let campaigns = await fetchFromIndex();
-        state.campaigns = campaigns;
+        if (gen !== searchGeneration) return;
+        state.campaigns = filterClientCampaigns(campaigns);
+        state.total = state.campaigns.length;
         state.usingMock = false;
         $("#mockBanner").classList.add("hidden");
         updateResultsMeta();
         renderGrid();
 
         if (q.length >= 2) {
-          setSearchStatus("Searching GoFundMe live (may take up to a minute)…", true);
-          const fast = await fetchFastSearch(q);
+          setSearchStatus("Scraping platforms live for your search (may take 1–2 min)…", true);
+          const fastPromise = fetchFastSearch(q);
+          const livePromise = fetchLiveSearch(q);
+
+          const fast = await fastPromise;
+          if (gen !== searchGeneration) return;
           if (fast?.campaigns?.length) {
-            state.campaigns = fast.campaigns;
-            state.total = fast.total;
-            state.liveSearch = true;
-            state.pages = 1;
-            const parts = Object.entries(fast.by_platform || {})
-              .filter(([, n]) => n > 0)
-              .map(([p, n]) => `${platformLabel(p)} (${n})`)
-              .join(", ");
-            $("#liveSearchBanner").textContent = parts
-              ? `Expanded search · ${fast.total} results · ${parts}`
-              : `Expanded search · ${fast.total} results`;
-            $("#liveSearchBanner").classList.remove("hidden");
+            applySearchResults(fast, "fast");
+            setSearchStatus("Still scraping other platforms…", true);
+          }
+
+          const live = await livePromise;
+          if (gen !== searchGeneration) return;
+          if (live?.campaigns?.length) {
+            applySearchResults(live, "live");
             setSearchStatus("");
-          } else if (campaigns.length) {
-            setSearchStatus(`Showing index results only. Live expand returned no extra matches.`);
-          } else {
+          } else if (live?.error === "timeout") {
+            setSearchStatus(
+              state.campaigns.length
+                ? "Live scrape timed out — showing partial results."
+                : "Live scrape timed out — try a shorter query."
+            );
+          } else if (!state.campaigns.length) {
             setSearchStatus("No matches yet — try another keyword or clear filters.");
+          } else {
+            setSearchStatus("");
           }
         } else {
           setSearchStatus("");
         }
       } catch (err) {
+        if (gen !== searchGeneration) return;
         console.warn("API unavailable, using mock data", err);
         state.campaigns = filterMock(MOCK_CAMPAIGNS);
         state.total = state.campaigns.length;

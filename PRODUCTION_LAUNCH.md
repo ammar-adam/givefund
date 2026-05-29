@@ -12,18 +12,15 @@ Use this once before going live. GiveFund runs **free** — you only pay for Ren
 
 ## How data stays fresh (read this)
 
-There are **two** scrape loops — both need `GFM_ALGOLIA_*` keys or GoFundMe indexing stalls:
+**When a user searches**, the API scrapes platforms **on demand** for that query (`/search/live`) — GoFundMe, LaunchGood, JustGiving, Givebutter, and others. Results are saved to the DB so **Give now** works with real campaign ids.
+
+Background loops still help **browse without a search query**:
 
 | Loop | Where | Schedule | What it does |
 |------|-------|----------|--------------|
-| **Live loop** | Render server | Every **20 min** (`LIVE_SCRAPE=true`) | `live_runner.py` updates the DB on disk that the API reads **right now** |
-| **Snapshot loop** | GitHub Actions | **Hourly** incremental + **daily** full rebuild | Publishes `db-latest` release; optional deploy hook refreshes Render |
-
-`SCRAPE_ON_START=false` only skips the one-time bootstrap ingest on deploy — it does **not** turn off the live loop.
-
-On every Render boot: download release **only if** local DB has fewer campaigns than the remote snapshot (won't overwrite fresher data).
-
-**Without Algolia keys on Render**, the live loop runs but GoFundMe yield is ~zero — set keys on Render **and** GitHub Secrets.
+| **User search** | API (on demand) | Every search (2+ chars) | `live_search.py` across all wired platforms |
+| **Live loop** | Render server | Every **20 min** | Keeps browse/index fresh when users aren't searching |
+| **Snapshot loop** | GitHub Actions | **Hourly** + **daily** full rebuild | Publishes `db-latest` for cold starts |
 
 ---
 
