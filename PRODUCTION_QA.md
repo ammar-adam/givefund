@@ -62,18 +62,17 @@
 |---|-------------|-------|-------|
 | 1 | Render API live + `/health` 200 | Ops | ☐ |
 | 2 | Vercel `GIVEFUND_API_URL` → Render HTTPS | Ops | ☐ |
-| 3 | `GLOBALGIVING_API_KEY` on Render + GHA secret | Ops | ☐ |
-| 4 | `STRIPE_SECRET_KEY` if Link tips enabled | Ops | ☐ |
-| 5 | Run full scrape cycle once (`scrape_loop.py --once`) | Data | ☐ |
-| 6 | Verify ≥3 new platforms have rows in DB | Data | ☐ |
-| 7 | Sync frontend platform list with `platforms_catalog.py` | Eng | ☑ |
-| 8 | Update `PRODUCTION.md` yield table after scrape | Eng | ☐ |
-| 9 | GHA scrape: add `islamicrelief_ca` + optional discover subset | Eng | ☐ |
-| 10 | Manual QA: Give Now opens `/donate` + UTM on GFM/LG | QA | ☐ |
-| 11 | Manual QA: mock banner hidden when API up | QA | ☐ |
-| 12 | Rate-limit: GFM Algolia creds in GHA secrets | Ops | ☐ |
+| 3 | `GFM_ALGOLIA_*` on Render + GHA secrets | Ops | ☐ |
+| 4 | Run **Live Scrape** workflow once → `db-latest` release | Data | ☐ |
+| 5 | Render `GIVEFUND_FRONTEND_URL` = Vercel URL | Ops | ☐ |
+| 6 | Optional: `STRIPE_*` + `GOOGLE_CLIENT_ID` for wallet | Ops | ☐ |
+| 7 | `GLOBALGIVING_API_KEY` on Render + GHA (optional) | Ops | ☐ |
+| 8 | Verify ≥10k campaigns via `/stats` | Data | ☐ |
+| 9 | Manual QA: Express Give → official `/donate` + UTM | QA | ☐ |
+| 10 | Manual QA: mock banner hidden when API up | QA | ☐ |
+| 11 | Manual QA: `/wallet.html` Stripe redirect (if keyed) | QA | ☐ |
 
-**Pass 3 verdict:** **Ship discovery MVP** when 1–6 and 10–11 pass. **Ship “global” claim** when 6 + new platform data verified.
+**Pass 3 verdict:** Follow [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) — ship when 1–5 and 9–10 pass.
 
 ---
 

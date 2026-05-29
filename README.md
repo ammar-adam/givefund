@@ -24,9 +24,14 @@ flowchart LR
 
 ## Deploy to production
 
-**API:** [Deploy to Render](https://render.com/deploy?repo=https://github.com/ammar-adam/givefund)  
-**UI:** [Deploy to Vercel](https://vercel.com/new/clone?repository-url=https://github.com/ammar-adam/givefund) — set `GIVEFUND_API_URL` to your Render URL.  
-Full steps in **[PRODUCTION.md](./PRODUCTION.md)**.
+**Checklist:** **[PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md)** — Render API, Vercel UI, GitHub scrape, optional Stripe/Google keys.
+
+| Host | One-click |
+|------|-----------|
+| API | [Deploy to Render](https://render.com/deploy?repo=https://github.com/ammar-adam/givefund) |
+| UI | [Deploy to Vercel](https://vercel.com/new/clone?repository-url=https://github.com/ammar-adam/givefund) — set `GIVEFUND_API_URL` |
+
+Details in **[PRODUCTION.md](./PRODUCTION.md)**.
 
 ## Quick start
 
@@ -61,6 +66,10 @@ See **[HANDOFF.md](./HANDOFF.md)** for local development and **[PRODUCTION.md](.
 | `GET /platforms` | Distinct platforms |
 | `GET /stats` | Totals and last scraped time |
 | `GET /health` | Status and row count |
+| `GET /wallet/config` | Stripe + Google OAuth availability |
+| `GET /wallet/profile?email=` | Saved donor profile |
+| `POST /wallet/setup` | Start Stripe card save (no charge) |
+| `GET /campaigns/{id}/checkout` | Express Give deep link + prefill |
 
 ## Git
 

@@ -1,71 +1,86 @@
 # GiveFund — Production Deployment
 
+**Start here:** [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) — step-by-step checklist with every env var.
+
 ## One-click API (Render)
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ammar-adam/givefund)
 
-Uses root [`render.yaml`](render.yaml). On first boot, `scripts/start_prod.sh` scrapes GoFundMe + LaunchGood if the DB has fewer than 50 campaigns.
+Uses root [`render.yaml`](render.yaml). On boot:
 
-After deploy, copy your service URL (e.g. `https://givefund-api.onrender.com`).
+1. Downloads `givefund.db` from GitHub Release (`DB_DOWNLOAD_URL`) when available
+2. Runs scale ingest only if DB &lt; `MIN_CAMPAIGNS` (10k)
+3. Starts background live scraper (`LIVE_SCRAPE=true`)
+4. Serves FastAPI on `$PORT`
 
-## Frontend (Vercel) — recommended for UI
+## Frontend (Vercel) — recommended
 
 1. [Import repo](https://vercel.com/new) → `ammar-adam/givefund`
-2. Framework preset: **Other** (static). Root `vercel.json` is already in the repo.
-3. **Environment variable** (Production + Preview):
-   ```
-   GIVEFUND_API_URL=https://YOUR-API-HOST.onrender.com
-   ```
-   Must be **HTTPS**. No trailing slash.
-4. Deploy → open the Vercel URL. Stats bar should show live counts (not the mock banner).
+2. Framework: **Other** (static). `vercel.json` runs `scripts/write-frontend-config.js`.
+3. **Environment variables** (Production + Preview):
+
+   | Variable | Example |
+   |----------|---------|
+   | `GIVEFUND_API_URL` | `https://givefund-api.onrender.com` |
+
+   HTTPS, no trailing slash.
+
+4. Deploy → stats bar shows live counts.
 
 ## Frontend (Netlify)
 
-Same env var; see `netlify.toml` if you prefer Netlify over Vercel.
+Same `GIVEFUND_API_URL`; see [`netlify.toml`](netlify.toml).
 
 ## Architecture
 
 | Component | Host | Notes |
 |-----------|------|-------|
 | API + SQLite | Render | Persistent disk `/var/data/givefund.db` |
-| Frontend | Netlify | `GIVEFUND_API_URL` → Render API |
-| Scraper | Render boot + GitHub Actions | ~1000+ GoFundMe via Algolia pagination |
+| Frontend | Vercel / Netlify | `GIVEFUND_API_URL` → Render API |
+| DB snapshots | GitHub Release `db-latest` | Live Scrape workflow every 4h |
+| Wallet (optional) | Stripe + Google | Setup mode only — no GiveFund charges |
+
+## Environment variables (summary)
+
+| Where | Keys |
+|-------|------|
+| **Render** | `GFM_ALGOLIA_*`, `GIVEFUND_FRONTEND_URL`, optional `STRIPE_*`, `GOOGLE_CLIENT_ID`, `GLOBALGIVING_API_KEY` |
+| **GitHub Actions** | Same Algolia keys, optional `RENDER_DEPLOY_HOOK_URL` |
+| **Vercel** | `GIVEFUND_API_URL` |
+
+Full table in [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md).
 
 ## Data refresh
 
-**Automatic on Render:** set `SCRAPE_ON_START=true` (default). Re-deploy to re-scrape if needed.
+1. **GitHub Actions** — [`scrape.yml`](.github/workflows/scrape.yml) every 4h publishes `givefund.db` to release **`db-latest`**
+2. **Render** — downloads on deploy/startup; background `live_runner.py` keeps disk fresh
+3. **Optional** — `RENDER_DEPLOY_HOOK_URL` secret redeploys API after each scrape
 
-**Daily GitHub Actions:**
+See [PRODUCTION_DB_SYNC.md](./PRODUCTION_DB_SYNC.md).
 
-- [`scrape.yml`](.github/workflows/scrape.yml) — 06:00 UTC, uploads `givefund.db` as a workflow artifact (download from Actions tab if needed)
-
-**Optional:** set `DB_DOWNLOAD_URL` on Render to any HTTPS URL hosting a `givefund.db` snapshot, with `SCRAPE_ON_START=false`.
-
-## Scraper scale (verified)
+## Scraper scale (typical)
 
 | Platform | Method | Typical yield |
 |----------|--------|---------------|
-| GoFundMe | Algolia pagination | **~4000+** unique |
-| LaunchGood | Discover + page enrichment | **~18–50** |
-| Islamic Relief CA | Leaderboard (Playwright) | **~20–80** |
-| Ketto / BackaBuddy / Give.asia / M-Changa / Thundafund | Discover scraper | **varies** (0–40 each run) |
-| GlobalGiving | REST API (`GLOBALGIVING_API_KEY`) | **100+** when keyed |
-| Fundly | No public listing (redirect) | skipped |
+| GoFundMe | Algolia pagination | **20k+** with keys |
+| Open Collective | GraphQL | **100+** |
+| LaunchGood | Discover + enrich | **20–50** |
+| Givebutter, JustGiving, Ketto, … | Discover + live search | **varies** |
+| GlobalGiving | REST API (key) | **100+** |
 
-**Continuous scrape:** `python scripts/scrape_loop.py` (2h interval) or `--once` for a full cycle.
-
-See `SCRAPER_RESEARCH_GLOBAL.md` and `PRODUCTION_QA.md`.
+**25 platforms** in catalog; indexed count depends on scrape runs.
 
 ## Verify production
 
 ```bash
 curl https://YOUR-API.onrender.com/health
-curl "https://YOUR-API.onrender.com/stats"
+curl https://YOUR-API.onrender.com/stats
+curl https://YOUR-API.onrender.com/wallet/config
 curl "https://YOUR-API.onrender.com/campaigns?page_size=3"
 ```
 
-Open Netlify URL — stats bar shows live totals; mock banner should not appear.
+Open frontend URL — no mock banner when API is reachable.
 
 ## CI
 
-Every push runs [`ci.yml`](.github/workflows/ci.yml) (API contract tests).
+Every push runs [`ci.yml`](.github/workflows/ci.yml) (API + deep-link tests).

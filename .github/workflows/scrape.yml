@@ -67,4 +67,5 @@ jobs:
           sleep 4
           curl -sf http://127.0.0.1:8765/health
           curl -sf http://127.0.0.1:8765/ingest/status
+          curl -sf http://127.0.0.1:8765/wallet/config
           curl -sf "http://127.0.0.1:8765/campaigns?page_size=1" | grep -q campaigns

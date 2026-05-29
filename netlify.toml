@@ -1,7 +1,7 @@
 [build]
-  base = "frontend"
-  publish = "."
-  command = "node -e \"const u=process.env.GIVEFUND_API_URL||'http://localhost:8000'; require('fs').writeFileSync('config.js', 'window.GIVEFUND_API_URL = \\\"'+u+'\\\";\\n')\""
+  base = "."
+  publish = "frontend"
+  command = "node scripts/write-frontend-config.js"
 
 [[headers]]
   for = "/*"

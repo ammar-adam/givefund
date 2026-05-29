@@ -11,9 +11,18 @@
 
 3. **Background scraper** on Render (`LIVE_SCRAPE=true`) keeps the disk fresh between releases.
 
-## One-time Render setup
+## One-time setup
 
-In the Render dashboard for `givefund-api`:
+### GitHub Secrets (Actions)
+
+| Secret | Purpose |
+|--------|---------|
+| `GFM_ALGOLIA_APP_ID` | GoFundMe bulk + live search |
+| `GFM_ALGOLIA_API_KEY` | Same |
+| `GLOBALGIVING_API_KEY` | Optional GlobalGiving API |
+| `RENDER_DEPLOY_HOOK_URL` | Optional — redeploy API after each scrape |
+
+### Render environment
 
 | Variable | Value |
 |----------|--------|
@@ -22,10 +31,16 @@ In the Render dashboard for `givefund-api`:
 | `LIVE_SCRAPE` | `true` |
 | `GFM_ALGOLIA_APP_ID` | *(secret)* |
 | `GFM_ALGOLIA_API_KEY` | *(secret)* |
+| `GIVEFUND_FRONTEND_URL` | Your Vercel/Netlify URL (wallet Stripe redirects) |
+| `STRIPE_SECRET_KEY` | Optional wallet |
+| `STRIPE_PUBLISHABLE_KEY` | Optional wallet |
+| `GOOGLE_CLIENT_ID` | Optional Google Sign-In |
 
-Optional: **`RENDER_DEPLOY_HOOK_URL`** — Render deploy hook; add as GitHub secret so each scrape run redeploys the API with the new DB.
+## Run scrape + publish
 
-## Run scrape + publish manually
+**Actions → Live Scrape → Run workflow** (first run may take 1–3 hours).
+
+Or locally:
 
 ```bash
 cd scraper
@@ -34,8 +49,6 @@ cd ..
 python scripts/publish_db_release.py
 gh release upload db-latest givefund.db db-manifest.json --clobber
 ```
-
-Or: **Actions → Live Scrape → Run workflow**.
 
 ## Verify production
 
@@ -53,3 +66,5 @@ $env:DB_DOWNLOAD_URL="https://github.com/ammar-adam/givefund/releases/download/d
 $env:DB_PATH=".\givefund-downloaded.db"
 python scripts/download_db.py
 ```
+
+See [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md) for the full go-live checklist.

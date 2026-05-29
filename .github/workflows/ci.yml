@@ -22,6 +22,18 @@ jobs:
         env:
           DB_PATH: ${{ github.workspace }}/givefund-test.db
 
+      - name: Smoke wallet and checkout endpoints
+        run: |
+          DB_PATH=${{ github.workspace }}/givefund-smoke.db
+          python -c "import sqlite3, os; p=os.environ['DB_PATH']; c=sqlite3.connect(p); c.execute('CREATE TABLE campaigns (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT, story_snippet TEXT, photo_url TEXT, goal_amount REAL, raised_amount REAL, platform TEXT, campaign_url TEXT UNIQUE, category TEXT, location TEXT, scraped_at DATETIME DEFAULT CURRENT_TIMESTAMP)'); c.execute(\"INSERT INTO campaigns (title, platform, campaign_url, goal_amount, raised_amount) VALUES ('Test', 'gofundme', 'https://www.gofundme.com/f/test', 100, 50)\"); c.commit()"
+          cd backend
+          DB_PATH=${{ github.workspace }}/givefund-smoke.db uvicorn main:app --host 127.0.0.1 --port 8765 &
+          sleep 3
+          curl -sf http://127.0.0.1:8765/wallet/config
+          curl -sf http://127.0.0.1:8765/campaigns/1/checkout | grep -q donate_url
+        env:
+          DB_PATH: ${{ github.workspace }}/givefund-smoke.db
+
   lint-imports:
     runs-on: ubuntu-latest
     steps:
