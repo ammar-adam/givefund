@@ -10,6 +10,21 @@ Use this once before going live. GiveFund runs **free** — you only pay for Ren
 | Static UI | [Vercel](https://vercel.com) or Netlify | `https://givefund.vercel.app` |
 | Campaign DB snapshot | GitHub Release `db-latest` | Built by **Live Scrape** workflow |
 
+## How data stays fresh (read this)
+
+There are **two** scrape loops — both need `GFM_ALGOLIA_*` keys or GoFundMe indexing stalls:
+
+| Loop | Where | Schedule | What it does |
+|------|-------|----------|--------------|
+| **Live loop** | Render server | Every **20 min** (`LIVE_SCRAPE=true`) | `live_runner.py` updates the DB on disk that the API reads **right now** |
+| **Snapshot loop** | GitHub Actions | **Hourly** incremental + **daily** full rebuild | Publishes `db-latest` release; optional deploy hook refreshes Render |
+
+`SCRAPE_ON_START=false` only skips the one-time bootstrap ingest on deploy — it does **not** turn off the live loop.
+
+On every Render boot: download release **only if** local DB has fewer campaigns than the remote snapshot (won't overwrite fresher data).
+
+**Without Algolia keys on Render**, the live loop runs but GoFundMe yield is ~zero — set keys on Render **and** GitHub Secrets.
+
 ---
 
 ## Step 1 — Deploy API (Render)
@@ -128,8 +143,10 @@ Manual:
 
 | Task | Frequency |
 |------|-----------|
-| Live Scrape workflow | Every 4h (cron) + manual after Algolia key refresh |
+| Render live loop | Every **20 min** (automatic while API is up) |
+| GHA incremental scrape | **Hourly** (`live_runner` + publish `db-latest`) |
+| GHA full scale ingest | **Daily** 06:00 UTC |
 | Rotate GFM Algolia keys | When scrape yield drops to zero |
-| Render deploy | Auto via deploy hook after scrape, or manual |
+| Render redeploy | Optional deploy hook after each GHA run |
 
 See also: [PRODUCTION.md](./PRODUCTION.md), [PRODUCTION_DB_SYNC.md](./PRODUCTION_DB_SYNC.md), [PRODUCTION_QA.md](./PRODUCTION_QA.md).

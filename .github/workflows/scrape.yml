@@ -2,8 +2,20 @@ name: Live Scrape
 
 on:
   schedule:
-    - cron: "0 */4 * * *"
+    # Incremental: all platforms via live_runner (~hourly)
+    - cron: "15 * * * *"
+    # Full rebuild: GoFundMe Algolia scale + all platforms (daily)
+    - cron: "0 6 * * *"
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "incremental (live_runner) or full (scale_ingest)"
+        required: false
+        default: incremental
+        type: choice
+        options:
+          - incremental
+          - full
 
 permissions:
   contents: write
@@ -25,8 +37,7 @@ jobs:
           pip install -r backend/requirements.txt
           playwright install chromium --with-deps
 
-      - name: Bootstrap 10k+ campaigns (GFM Algolia + Open Collective + platforms)
-        run: cd scraper && python scale_ingest.py --target 10000 --parallel 6
+      - name: Ingest campaigns
         env:
           DB_PATH: ${{ github.workspace }}/givefund.db
           GFM_ALGOLIA_APP_ID: ${{ secrets.GFM_ALGOLIA_APP_ID }}
@@ -34,6 +45,15 @@ jobs:
           GFM_ALGOLIA_ONLY: "true"
           GFM_MAX_ALGOLIA_PAGES: "60"
           GLOBALGIVING_API_KEY: ${{ secrets.GLOBALGIVING_API_KEY }}
+          RUN_MODE: ${{ github.event.inputs.mode || (github.event.schedule == '0 6 * * *' && 'full') || 'incremental' }}
+        run: |
+          echo "Run mode: $RUN_MODE"
+          cd scraper
+          if [ "$RUN_MODE" = "full" ]; then
+            python scale_ingest.py --target 10000 --parallel 6
+          else
+            python live_runner.py --once --parallel 6
+          fi
 
       - name: Report counts
         run: python scripts/publish_db_release.py
@@ -57,8 +77,10 @@ jobs:
           retention-days: 14
 
       - name: Trigger Render deploy (optional)
-        if: ${{ secrets.RENDER_DEPLOY_HOOK_URL != '' }}
-        run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        if: env.RENDER_DEPLOY_HOOK_URL != ''
+        run: curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL"
 
       - name: Smoke test API
         run: |

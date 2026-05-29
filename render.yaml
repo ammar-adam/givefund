@@ -25,7 +25,7 @@ services:
       - key: LIVE_SCRAPE
         value: "true"
       - key: SCRAPE_INTERVAL
-        value: "1800"
+        value: "1200"
       - key: MIN_CAMPAIGNS
         value: "10000"
       - key: GFM_ALGOLIA_ONLY

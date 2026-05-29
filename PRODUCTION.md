@@ -52,9 +52,11 @@ Full table in [PRODUCTION_LAUNCH.md](./PRODUCTION_LAUNCH.md).
 
 ## Data refresh
 
-1. **GitHub Actions** — [`scrape.yml`](.github/workflows/scrape.yml) every 4h publishes `givefund.db` to release **`db-latest`**
-2. **Render** — downloads on deploy/startup; background `live_runner.py` keeps disk fresh
-3. **Optional** — `RENDER_DEPLOY_HOOK_URL` secret redeploys API after each scrape
+1. **Render live loop** — `LIVE_SCRAPE=true` runs `live_runner.py` every **20 minutes** on the persistent disk (this is what keeps the **live site** fresh).
+2. **GitHub Actions** — [`scrape.yml`](.github/workflows/scrape.yml):
+   - **Hourly** — incremental `live_runner` + publish `db-latest`
+   - **Daily 06:00 UTC** — full `scale_ingest` rebuild
+3. **Optional** — `RENDER_DEPLOY_HOOK_URL` redeploys Render after each GHA run so the release snapshot is pulled on boot (local disk is usually already fresher from the live loop).
 
 See [PRODUCTION_DB_SYNC.md](./PRODUCTION_DB_SYNC.md).
 
