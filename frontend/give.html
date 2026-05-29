@@ -40,7 +40,7 @@
     .platform { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
     .title { font-size: 1.25rem; font-weight: 600; margin: 8px 0; }
     label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
-    input[type=email] {
+    input[type=email], input[type=text] {
       width: 100%;
       padding: 12px 14px;
       border: 1px solid var(--border);
@@ -57,6 +57,16 @@
       padding: 4px 10px;
       border-radius: 999px;
       margin-bottom: 12px;
+    }
+    .prefill-badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1e40af;
+      background: #dbeafe;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-left: 6px;
     }
     .cta {
       display: block;
@@ -104,6 +114,9 @@
         <p class="title" id="campaignTitle"></p>
         <p class="note" id="checkoutNote"></p>
         <p id="linkBadge" class="link-badge hidden">Stripe Link may autofill your card</p>
+        <p id="prefillBadge" class="link-badge hidden" style="background:#dbeafe;color:#1e40af">Details will be prefilled</p>
+        <label for="donorName">Your name</label>
+        <input id="donorName" type="text" placeholder="Your name" autocomplete="name">
         <label for="donorEmail">Your email (for checkout prefill + Link)</label>
         <input id="donorEmail" type="email" placeholder="you@example.com" autocomplete="email">
         <button type="button" class="cta" id="giveBtn">Continue to official checkout →</button>
@@ -113,7 +126,7 @@
         <p class="warn" id="limitNote"></p>
       </div>
       <p class="note">
-        <a href="index.html#wallet">Save your card with Stripe</a> (optional, free) so Link may work on more sites.
+        <a href="wallet.html">Set up your wallet</a> (optional, free) — Google sign-in + saved card for faster checkout.
       </p>
     </div>
     <p id="err" class="error hidden"></p>
@@ -124,6 +137,32 @@
     const id = params.get("id");
     const $ = (s) => document.querySelector(s);
 
+    function checkoutQuery() {
+      const email = $("#donorEmail").value.trim();
+      const q = new URLSearchParams();
+      if (email) q.set("email", email);
+      const qs = q.toString();
+      return qs ? `?${qs}` : "";
+    }
+
+    function applyCheckout(data) {
+      $("#platformLabel").textContent = data.platform;
+      $("#campaignTitle").textContent = data.title || "Campaign";
+      $("#checkoutNote").textContent = data.checkout_note;
+      $("#limitNote").textContent = data.cannot_token_charge_reason;
+      $("#linkBadge").classList.toggle("hidden", !data.link_likely);
+      const prefill = (data.prefill_fields || []).length > 0;
+      $("#prefillBadge").classList.toggle("hidden", !prefill);
+      if (data.donor_name && !$("#donorName").value) $("#donorName").value = data.donor_name;
+      window.__checkout = data;
+    }
+
+    async function fetchCheckout() {
+      const res = await fetch(`${API}/campaigns/${id}/checkout${checkoutQuery()}`);
+      if (!res.ok) throw new Error("Campaign not found");
+      return res.json();
+    }
+
     async function load() {
       if (!id) {
         $("#err").textContent = "Missing campaign id.";
@@ -131,29 +170,30 @@
         $("#loading").classList.add("hidden");
         return;
       }
-      const saved = localStorage.getItem("givefund_donor_email");
-      if (saved) $("#donorEmail").value = saved;
+      const savedEmail = localStorage.getItem("givefund_donor_email");
+      const savedName = localStorage.getItem("givefund_donor_name");
+      if (savedEmail) $("#donorEmail").value = savedEmail;
+      if (savedName) $("#donorName").value = savedName;
 
       try {
-        const email = $("#donorEmail").value.trim();
-        const q = email ? `?email=${encodeURIComponent(email)}` : "";
-        const res = await fetch(`${API}/campaigns/${id}/checkout${q}`);
-        if (!res.ok) throw new Error("Campaign not found");
-        const data = await res.json();
-        $("#platformLabel").textContent = data.platform;
-        $("#campaignTitle").textContent = data.title || "Campaign";
-        $("#checkoutNote").textContent = data.checkout_note;
-        $("#limitNote").textContent = data.cannot_token_charge_reason;
-        if (data.link_likely) $("#linkBadge").classList.remove("hidden");
-        $("#giveBtn").onclick = () => openCheckout(data);
+        const data = await fetchCheckout();
+        applyCheckout(data);
+        $("#giveBtn").onclick = () => openCheckout();
         $("#copyEmailBtn").onclick = () => {
           const em = $("#donorEmail").value.trim();
           if (em) navigator.clipboard.writeText(em);
         };
-        $("#donorEmail").addEventListener("change", () => refreshCheckout(data));
+        const refresh = async () => {
+          const email = $("#donorEmail").value.trim();
+          const name = $("#donorName").value.trim();
+          localStorage.setItem("givefund_donor_email", email);
+          if (name) localStorage.setItem("givefund_donor_name", name);
+          applyCheckout(await fetchCheckout());
+        };
+        $("#donorEmail").addEventListener("change", refresh);
+        $("#donorName").addEventListener("change", refresh);
         $("#loading").classList.add("hidden");
         $("#content").classList.remove("hidden");
-        window.__checkout = data;
       } catch (e) {
         $("#loading").classList.add("hidden");
         $("#err").textContent = e.message || "Failed to load";
@@ -161,19 +201,13 @@
       }
     }
 
-    async function refreshCheckout(prev) {
+    function openCheckout() {
       const email = $("#donorEmail").value.trim();
+      const name = $("#donorName").value.trim();
       localStorage.setItem("givefund_donor_email", email);
-      const q = email ? `?email=${encodeURIComponent(email)}` : "";
-      const res = await fetch(`${API}/campaigns/${id}/checkout${q}`);
-      if (res.ok) window.__checkout = await res.json();
-    }
-
-    function openCheckout(data) {
-      const email = $("#donorEmail").value.trim();
-      localStorage.setItem("givefund_donor_email", email);
-      if (window.__checkout) data = window.__checkout;
-      window.open(data.donate_url, "_blank", "noopener,noreferrer");
+      if (name) localStorage.setItem("givefund_donor_name", name);
+      const data = window.__checkout;
+      if (data) window.open(data.donate_url, "_blank", "noopener,noreferrer");
     }
 
     load();

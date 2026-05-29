@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your wallet — GiveFund</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="config.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root {
+      --bg: #f7f5f2;
+      --ink: #121212;
+      --muted: #5c5c5c;
+      --accent: #c45c4a;
+      --surface: #fff;
+      --border: #e8e4de;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 520px; margin: 0 auto; padding: 40px 24px 64px; }
+    h1 {
+      font-family: "Instrument Serif", serif;
+      font-weight: 400;
+      font-size: 2rem;
+      margin: 0 0 8px;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      margin: 24px 0;
+    }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    input[type=email], input[type=text] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .note { font-size: 14px; color: var(--muted); margin: 12px 0; }
+    .cta {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 14px;
+      background: var(--accent);
+      color: #fff;
+      font-weight: 600;
+      border-radius: 999px;
+      border: none;
+      font-size: 15px;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .cta:disabled { opacity: 0.5; cursor: not-allowed; }
+    .divider {
+      text-align: center;
+      color: var(--muted);
+      font-size: 13px;
+      margin: 20px 0;
+    }
+    .status {
+      font-size: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+    }
+    .status.ok { background: #dcfce7; color: #166534; }
+    .status.err { background: #fee2e2; color: #991b1b; }
+    .back { color: var(--accent); text-decoration: none; font-size: 14px; }
+    .hidden { display: none !important; }
+    #googleBtn { display: flex; justify-content: center; min-height: 44px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="index.html#campaigns">← Back to campaigns</a>
+    <h1>Your <em>wallet</em></h1>
+    <p class="note">
+      Optional and free. Sign in with Google to save your name and email, then save a card with Stripe Link.
+      We use these details to prefill checkout on supported platforms — GiveFund never charges you or holds campaign funds.
+    </p>
+
+    <div id="profileCard" class="card hidden">
+      <p><strong id="profileName"></strong></p>
+      <p class="note" id="profileEmail"></p>
+      <p id="savedBadge" class="status ok hidden">Card saved — Stripe Link may autofill on supported sites.</p>
+    </div>
+
+    <div class="card">
+      <div id="googleSection">
+        <p class="note">Step 1 — verify your identity</p>
+        <div id="googleBtn"></div>
+        <p id="googleOff" class="note hidden">Google sign-in is off until <code>GOOGLE_CLIENT_ID</code> is set on the API.</p>
+      </div>
+
+      <div class="divider">then</div>
+
+      <form id="walletForm" novalidate>
+        <p class="note">Step 2 — save card (Stripe, no charge)</p>
+        <label for="donorName">Name (for checkout prefill)</label>
+        <input id="donorName" type="text" placeholder="Your name" autocomplete="name">
+        <label for="donorEmail">Email (must match Stripe Link)</label>
+        <input id="donorEmail" type="email" required placeholder="you@example.com" autocomplete="email">
+        <button type="submit" class="cta" id="saveBtn">Save card securely</button>
+      </form>
+      <p id="stripeOff" class="note hidden">Card save is off until <code>STRIPE_SECRET_KEY</code> is set on the API.</p>
+      <p id="status" class="status hidden" role="status"></p>
+    </div>
+  </div>
+  <script>
+    const API = window.GIVEFUND_API_URL || "http://localhost:8000";
+    const $ = (s) => document.querySelector(s);
+
+    let config = { enabled: false, google_oauth_enabled: false, google_client_id: null };
+
+    function showProfile(profile) {
+      if (!profile || !profile.email) return;
+      localStorage.setItem("givefund_donor_email", profile.email);
+      if (profile.display_name) localStorage.setItem("givefund_donor_name", profile.display_name);
+      $("#profileCard").classList.remove("hidden");
+      $("#profileEmail").textContent = profile.email;
+      $("#profileName").textContent = profile.display_name || profile.email;
+      if (profile.has_saved_card) $("#savedBadge").classList.remove("hidden");
+      $("#donorEmail").value = profile.email;
+      if (profile.display_name) $("#donorName").value = profile.display_name;
+    }
+
+    async function loadProfile(email) {
+      if (!email) return;
+      try {
+        const res = await fetch(`${API}/wallet/profile?email=${encodeURIComponent(email)}`);
+        if (res.ok) showProfile(await res.json());
+      } catch { /* ignore */ }
+    }
+
+    async function initGoogle() {
+      if (!config.google_oauth_enabled || !config.google_client_id) {
+        $("#googleOff").classList.remove("hidden");
+        return;
+      }
+      const handleCredential = async (response) => {
+        $("#status").className = "status";
+        $("#status").textContent = "Verifying Google sign-in…";
+        $("#status").classList.remove("hidden");
+        try {
+          const res = await fetch(`${API}/wallet/oauth/google`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Google sign-in failed");
+          showProfile(data.profile);
+          $("#status").className = "status ok";
+          $("#status").textContent = "Signed in with Google.";
+        } catch (e) {
+          $("#status").className = "status err";
+          $("#status").textContent = e.message || "Google sign-in failed.";
+        }
+      };
+      google.accounts.id.initialize({
+        client_id: config.google_client_id,
+        callback: handleCredential,
+        auto_select: false,
+      });
+      google.accounts.id.renderButton($("#googleBtn"), {
+        theme: "outline",
+        size: "large",
+        width: 320,
+        text: "continue_with",
+      });
+    }
+
+    async function init() {
+      const savedEmail = localStorage.getItem("givefund_donor_email");
+      const savedName = localStorage.getItem("givefund_donor_name");
+      if (savedEmail) $("#donorEmail").value = savedEmail;
+      if (savedName) $("#donorName").value = savedName;
+
+      try {
+        const res = await fetch(`${API}/wallet/config`);
+        config = res.ok ? await res.json() : { enabled: false };
+      } catch {
+        config = { enabled: false };
+      }
+
+      if (!config.enabled) {
+        $("#stripeOff").classList.remove("hidden");
+        $("#saveBtn").disabled = true;
+      }
+
+      await loadProfile(savedEmail);
+      if (window.google && google.accounts) {
+        initGoogle();
+      } else {
+        window.addEventListener("load", () => {
+          if (window.google && google.accounts) initGoogle();
+        });
+      }
+
+      $("#walletForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (!config.enabled) return;
+        const email = $("#donorEmail").value.trim();
+        const display_name = $("#donorName").value.trim() || null;
+        localStorage.setItem("givefund_donor_email", email);
+        if (display_name) localStorage.setItem("givefund_donor_name", display_name);
+        $("#status").className = "status";
+        $("#status").textContent = "Redirecting to Stripe…";
+        $("#status").classList.remove("hidden");
+        try {
+          const res = await fetch(`${API}/wallet/setup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              display_name,
+              success_url: `${window.location.origin}/wallet-success.html`,
+              cancel_url: `${window.location.origin}/wallet.html`,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.detail || "Setup failed");
+          window.location.href = data.url;
+        } catch (err) {
+          $("#status").className = "status err";
+          $("#status").textContent = err.message || "Could not start card setup.";
+        }
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -180,7 +180,37 @@
       "search_url_template": "https://whydonate.com/en/search/{query}",
       "base_url": "https://whydonate.com",
       "link_markers": ["/campaign/", "/fundraiser/"],
-      "notes": "Backlog — live search only until bulk scraper added"
+      "notes": "EU crowdfunding — live search + discover"
+    },
+    {
+      "id": "givesendgo",
+      "name": "GiveSendGo",
+      "region": "us",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.givesendgo.com/site/search?search={query}",
+      "base_url": "https://www.givesendgo.com",
+      "discover_urls": ["https://www.givesendgo.com/site/browse"],
+      "link_markers": ["/G", "/f/"]
+    },
+    {
+      "id": "givengain",
+      "name": "GivenGain",
+      "region": "global",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.givengain.com/search?q={query}",
+      "base_url": "https://www.givengain.com",
+      "discover_urls": ["https://www.givengain.com/campaigns"],
+      "link_markers": ["/project/", "/campaign/"]
+    },
+    {
+      "id": "leetchi",
+      "name": "Leetchi",
+      "region": "eu",
+      "scrape_method": "discover",
+      "base_url": "https://www.leetchi.com",
+      "discover_urls": ["https://www.leetchi.com/en/collection"],
+      "link_markers": ["/c/", "/pot/"],
+      "notes": "EU collective pots (Lydia group)"
     },
     {
       "id": "givelively",

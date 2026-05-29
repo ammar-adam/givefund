@@ -118,6 +118,45 @@ def test_checkout_assist(client):
     assert data["campaign_id"] == 1
     assert "gofundme" in data["donate_url"] or data["platform"] == "gofundme"
     assert data["cannot_token_charge"] is True
+    assert data["donor_email"] == "donor@example.com"
+
+
+def test_wallet_config(client):
+    """Wallet config returns enabled flag and OAuth availability."""
+    response = client.get("/wallet/config")
+    assert response.status_code == 200
+    data = response.json()
+    assert "enabled" in data
+    assert "google_oauth_enabled" in data
+
+
+def test_wallet_profile_empty(client):
+    """Unknown donor returns empty profile shape."""
+    response = client.get("/wallet/profile", params={"email": "new@example.com"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["email"] == "new@example.com"
+    assert data["has_saved_card"] is False
+
+
+def test_donor_profile_upsert():
+    """Donor profile round-trip in test database."""
+    import asyncio
+
+    import donor_db
+
+    async def _run():
+        await donor_db.upsert_profile(
+            email="wallet@test.com",
+            display_name="Wallet Test",
+            stripe_customer_id="cus_test",
+            wallet_saved=True,
+        )
+        return await donor_db.profile_response("wallet@test.com")
+
+    profile = asyncio.run(_run())
+    assert profile["has_saved_card"] is True
+    assert profile["display_name"] == "Wallet Test"
 
 
 def test_search_live_validation(client):

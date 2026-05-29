@@ -74,12 +74,15 @@ class WalletConfigResponse(BaseModel):
 
     enabled: bool
     publishable_key: str | None = None
+    google_oauth_enabled: bool = False
+    google_client_id: str | None = None
 
 
 class WalletSetupRequest(BaseModel):
     """Start Stripe Checkout (setup mode) to save a card — no charge."""
 
     email: str = Field(min_length=3, max_length=320)
+    display_name: str | None = Field(default=None, max_length=120)
     success_url: str | None = None
     cancel_url: str | None = None
 
@@ -89,6 +92,47 @@ class WalletSetupResponse(BaseModel):
 
     session_id: str
     url: str
+    stripe_customer_id: str | None = None
+
+
+class WalletCompleteRequest(BaseModel):
+    """Finalize wallet after Stripe redirect."""
+
+    session_id: str = Field(min_length=8, max_length=200)
+
+
+class WalletCompleteResponse(BaseModel):
+    """Donor profile after successful card save."""
+
+    email: str
+    has_saved_card: bool
+    display_name: str | None = None
+    wallet_saved_at: str | None = None
+    link_ready: bool = False
+
+
+class DonorProfileResponse(BaseModel):
+    """Saved donor identity for checkout prefill."""
+
+    email: str
+    has_saved_card: bool = False
+    display_name: str | None = None
+    wallet_saved_at: str | None = None
+    link_ready: bool = False
+
+
+class GoogleAuthRequest(BaseModel):
+    """Google Sign-In credential (ID token)."""
+
+    credential: str = Field(min_length=20)
+
+
+class GoogleAuthResponse(BaseModel):
+    """Verified Google identity — use email for wallet setup."""
+
+    email: str
+    display_name: str | None = None
+    profile: DonorProfileResponse
 
 
 class CheckoutAssistResponse(BaseModel):
@@ -100,6 +144,10 @@ class CheckoutAssistResponse(BaseModel):
     donate_url: str
     link_likely: bool = False
     email_prefill_supported: bool = False
+    prefill_fields: list[str] = []
+    donor_email: str | None = None
+    donor_name: str | None = None
+    wallet_saved: bool = False
     checkout_note: str
     steps_saved_estimate: str
     cannot_token_charge: bool = True

@@ -101,6 +101,27 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         link_markers=("/campaign/", "/fundraiser/"),
         search_url_template="https://whydonate.com/en/search/{query}",
     ),
+    DiscoverConfig(
+        platform="givesendgo",
+        base_url="https://www.givesendgo.com",
+        start_urls=("https://www.givesendgo.com/site/browse",),
+        link_markers=("/G", "/f/"),
+        search_url_template="https://www.givesendgo.com/site/search?search={query}",
+    ),
+    DiscoverConfig(
+        platform="givengain",
+        base_url="https://www.givengain.com",
+        start_urls=("https://www.givengain.com/campaigns",),
+        link_markers=("/project/", "/campaign/"),
+        search_url_template="https://www.givengain.com/search?q={query}",
+    ),
+    DiscoverConfig(
+        platform="leetchi",
+        base_url="https://www.leetchi.com",
+        start_urls=("https://www.leetchi.com/en/collection", "https://www.leetchi.com/en/collections"),
+        link_markers=("/c/", "/pot/"),
+        max_campaigns=30,
+    ),
 ]
 
 EXTRA_SCRAPERS = {cfg.platform: make_scraper(cfg) for cfg in EXTRA_CONFIGS}

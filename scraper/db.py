@@ -54,6 +54,16 @@ async def create_table(conn: aiosqlite.Connection) -> None:
     columns = {row[1] for row in await cursor.fetchall()}
     if "location" not in columns:
         await conn.execute("ALTER TABLE campaigns ADD COLUMN location TEXT")
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS donor_profiles (
+            email TEXT PRIMARY KEY,
+            stripe_customer_id TEXT,
+            display_name TEXT,
+            google_sub TEXT,
+            wallet_saved_at DATETIME,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     await conn.commit()
 
 

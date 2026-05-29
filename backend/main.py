@@ -19,10 +19,15 @@ from models import (
     CampaignsResponse,
     CategoriesResponse,
     CheckoutAssistResponse,
+    DonorProfileResponse,
+    GoogleAuthRequest,
+    GoogleAuthResponse,
     HealthResponse,
     IngestStatusResponse,
     LiveSearchResponse,
     PlatformCatalogResponse,
+    WalletCompleteRequest,
+    WalletCompleteResponse,
     WalletConfigResponse,
     WalletSetupRequest,
     WalletSetupResponse,
@@ -34,6 +39,8 @@ from models import (
 from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
 from search_bridge import run_live_search_subprocess
 from search_fast import run_fast_search
+import donor_db
+import google_oauth
 import stripe_wallet
 from deep_links import checkout_assist
 
@@ -270,12 +277,22 @@ async def campaign_checkout(
     campaign = await db.get_campaign(campaign_id)
     if campaign is None:
         raise HTTPException(status_code=404, detail="Campaign not found")
+
+    donor_name: str | None = None
+    wallet_saved = False
+    if email:
+        profile = await donor_db.profile_response(email)
+        donor_name = profile.get("display_name")
+        wallet_saved = bool(profile.get("has_saved_card"))
+
     data = checkout_assist(
         platform=campaign.platform,
         campaign_url=campaign.campaign_url,
         campaign_id=campaign.id,
         title=campaign.title,
         donor_email=email,
+        donor_name=donor_name,
+        wallet_saved=wallet_saved,
     )
     return CheckoutAssistResponse(**data)
 
@@ -342,10 +359,52 @@ def _frontend_base_url() -> str:
 
 @app.get("/wallet/config", response_model=WalletConfigResponse)
 async def wallet_config() -> WalletConfigResponse:
-    """Stripe setup-mode availability (save card, no charge)."""
+    """Stripe setup-mode availability (save card, no charge) + Google OAuth."""
+    client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip() or None
     return WalletConfigResponse(
         enabled=stripe_wallet.is_configured(),
         publishable_key=stripe_wallet.get_publishable_key(),
+        google_oauth_enabled=google_oauth.is_configured(),
+        google_client_id=client_id,
+    )
+
+
+@app.get("/wallet/profile", response_model=DonorProfileResponse)
+async def wallet_profile(
+    email: str = Query(min_length=3, max_length=320),
+) -> DonorProfileResponse:
+    """Return saved donor profile for checkout prefill."""
+    return DonorProfileResponse(**await donor_db.profile_response(email))
+
+
+@app.post("/wallet/oauth/google", response_model=GoogleAuthResponse)
+async def wallet_google_oauth(body: GoogleAuthRequest) -> GoogleAuthResponse:
+    """Verify Google Sign-In and store donor identity."""
+    if not google_oauth.is_configured():
+        raise HTTPException(
+            status_code=503,
+            detail="Google sign-in is not configured. Set GOOGLE_CLIENT_ID on the API.",
+        )
+    try:
+        identity = google_oauth.verify_credential(body.credential)
+    except ValueError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("google oauth failed")
+        raise HTTPException(status_code=502, detail="Google sign-in failed") from exc
+
+    await donor_db.upsert_profile(
+        email=identity["email"],
+        display_name=identity.get("display_name") or None,
+        google_sub=identity.get("google_sub") or None,
+    )
+    profile = await donor_db.profile_response(identity["email"])
+    return GoogleAuthResponse(
+        email=identity["email"],
+        display_name=identity.get("display_name") or None,
+        profile=DonorProfileResponse(**profile),
     )
 
 
@@ -361,13 +420,48 @@ async def wallet_setup(body: WalletSetupRequest) -> WalletSetupResponse:
     try:
         result = stripe_wallet.create_setup_session(
             email=body.email,
+            display_name=body.display_name,
             success_url=body.success_url or f"{base}/wallet-success.html",
-            cancel_url=body.cancel_url or f"{base}/#wallet",
+            cancel_url=body.cancel_url or f"{base}/wallet.html",
+        )
+        await donor_db.upsert_profile(
+            email=body.email,
+            display_name=body.display_name,
+            stripe_customer_id=result.get("stripe_customer_id"),
         )
     except Exception as exc:
         logger.exception("wallet setup failed")
         raise HTTPException(status_code=502, detail="Could not start card setup") from exc
     return WalletSetupResponse(**result)
+
+
+@app.post("/wallet/complete", response_model=WalletCompleteResponse)
+async def wallet_complete(body: WalletCompleteRequest) -> WalletCompleteResponse:
+    """Finalize card save after Stripe redirect."""
+    if not stripe_wallet.is_configured():
+        raise HTTPException(status_code=503, detail="Stripe is not configured")
+    try:
+        done = stripe_wallet.complete_setup_session(body.session_id)
+        has_card = stripe_wallet.customer_has_payment_method(done["stripe_customer_id"])
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("wallet complete failed")
+        raise HTTPException(status_code=502, detail="Could not verify card setup") from exc
+
+    await donor_db.upsert_profile(
+        email=done["email"],
+        stripe_customer_id=done["stripe_customer_id"],
+        wallet_saved=has_card,
+    )
+    profile = await donor_db.profile_response(done["email"])
+    return WalletCompleteResponse(
+        email=profile["email"],
+        has_saved_card=profile["has_saved_card"],
+        display_name=profile.get("display_name"),
+        wallet_saved_at=profile.get("wallet_saved_at"),
+        link_ready=profile.get("link_ready", False),
+    )
 
 
 @app.get("/health", response_model=HealthResponse)

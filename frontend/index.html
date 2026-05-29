@@ -1033,17 +1033,13 @@
     <section id="wallet" class="wallet-band" aria-labelledby="walletTitle">
       <h2 id="walletTitle">Save your card <em>(optional)</em></h2>
       <p>
-        Free service — we never charge you. If you choose to save a card, Stripe stores it securely (Stripe Link).
-        On some sites that show Link at checkout, the <strong>same email</strong> may autofill your card.
-        GiveFund cannot apply your card on GoFundMe or LaunchGood; you still complete payment on their site.
+        Free service — we never charge you. Sign in with Google, save a card via Stripe Link, and we prefill your details
+        on supported platforms. GiveFund cannot apply your card on GoFundMe or LaunchGood; you still complete payment on their site.
       </p>
+      <p><a class="btn-primary" href="wallet.html" style="display:inline-block;text-decoration:none;margin-top:8px">Set up wallet →</a></p>
       <div id="walletUnconfigured" class="wallet-note hidden">
         Card save is off until <code>STRIPE_SECRET_KEY</code> is set on the API.
       </div>
-      <form id="walletForm" class="wallet-form hidden" novalidate>
-        <input id="walletEmail" type="email" required placeholder="Email for Stripe Link" autocomplete="email">
-        <button type="submit" id="walletSubmitBtn">Save card securely</button>
-      </form>
       <p id="walletStatus" class="wallet-note hidden" role="status"></p>
     </section>
 
@@ -1643,44 +1639,30 @@
     }
 
     async function initWallet() {
-      const form = $("#walletForm");
       const unconfigured = $("#walletUnconfigured");
+      const status = $("#walletStatus");
       try {
         const res = await fetch(`${API_URL}/wallet/config`);
         const data = res.ok ? await res.json() : { enabled: false };
-        if (data.enabled) {
-          form.classList.remove("hidden");
-          unconfigured.classList.add("hidden");
-        } else {
-          form.classList.add("hidden");
+        if (!data.enabled) {
           unconfigured.classList.remove("hidden");
+        } else {
+          unconfigured.classList.add("hidden");
+        }
+        const email = localStorage.getItem("givefund_donor_email");
+        if (email) {
+          const pr = await fetch(`${API_URL}/wallet/profile?email=${encodeURIComponent(email)}`);
+          if (pr.ok) {
+            const profile = await pr.json();
+            status.classList.remove("hidden");
+            status.textContent = profile.has_saved_card
+              ? `Signed in as ${profile.email} — card saved.`
+              : `Signed in as ${profile.email}. Finish setup on the wallet page.`;
+          }
         }
       } catch {
         unconfigured.classList.remove("hidden");
       }
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const email = $("#walletEmail").value.trim();
-        const status = $("#walletStatus");
-        status.classList.remove("hidden");
-        status.textContent = "Redirecting to Stripe…";
-        try {
-          const res = await fetch(`${API_URL}/wallet/setup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email,
-              success_url: `${window.location.origin}/wallet-success.html`,
-              cancel_url: `${window.location.origin}/#wallet`
-            })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.detail || "Setup failed");
-          window.location.href = data.url;
-        } catch (err) {
-          status.textContent = err.message || "Could not start card setup.";
-        }
-      });
     }
 
     function bindEvents() {
