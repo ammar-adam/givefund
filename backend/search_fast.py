@@ -46,6 +46,18 @@ async def run_fast_search(query: str, *, limit: int = 80) -> dict:
     except Exception as exc:
         logger.error("fast search globalgiving: %s", exc)
 
+    try:
+        from platforms.opencollective import search_opencollective
+
+        oc = await search_opencollective(query, max_results=min(30, limit))
+        by_platform["opencollective"] = len(oc)
+        for row in oc:
+            url = row.get("campaign_url")
+            if url:
+                merged[url] = row
+    except Exception as exc:
+        logger.error("fast search opencollective: %s", exc)
+
     campaigns = list(merged.values())[:limit]
     return {
         "query": query,

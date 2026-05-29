@@ -26,6 +26,21 @@ PLATFORM_CATALOG: list[dict[str, str]] = [
     {"id": "givesendgo", "label": "GiveSendGo"},
     {"id": "givengain", "label": "GivenGain"},
     {"id": "leetchi", "label": "Leetchi"},
+    {"id": "freefunder", "label": "FreeFunder"},
+    {"id": "plumfund", "label": "Plumfund"},
+    {"id": "kofi", "label": "Ko-fi"},
+    {"id": "liberapay", "label": "Liberapay"},
+    {"id": "helloasso", "label": "HelloAsso (France)"},
+    {"id": "betterplace", "label": "Betterplace (Germany)"},
+    {"id": "idonate", "label": "iDonate (Ireland)"},
+    {"id": "steunactie", "label": "Steunactie (Netherlands)"},
+    {"id": "kisskissbankbank", "label": "KissKissBankBank"},
+    {"id": "ulule", "label": "Ulule"},
+    {"id": "catarse", "label": "Catarse (Brazil)"},
+    {"id": "goteo", "label": "Goteo (Spain)"},
+    {"id": "vakinha", "label": "Vakinha (Brazil)"},
+    {"id": "rally", "label": "Rally.org"},
+    {"id": "everyorg", "label": "Every.org"},
 ]
 
 SUPPORTED_PLATFORM_COUNT = len(PLATFORM_CATALOG)

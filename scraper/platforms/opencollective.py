@@ -136,3 +136,17 @@ async def scrape_opencollective() -> list[dict]:
     result = list(campaigns.values())
     logger.info("[opencollective] total unique: %d", len(result))
     return result
+
+
+async def search_opencollective(query: str, *, max_results: int = 40) -> list[dict]:
+    """GraphQL searchTerm lookup — fast, no browser."""
+    if not query.strip():
+        return []
+    headers = {"Content-Type": "application/json"}
+    async with httpx.AsyncClient(headers=headers) as client:
+        try:
+            rows = await _fetch_page(client, 0, query.strip())
+        except Exception as exc:
+            logger.error("[opencollective] search %r: %s", query, exc)
+            return []
+    return rows[:max_results]

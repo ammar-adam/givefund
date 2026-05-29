@@ -103,10 +103,12 @@ def test_campaigns_search(client):
 
 def test_platform_catalog(client):
     catalog = client.get("/platforms/catalog").json()
-    assert catalog["count"] >= 10
+    assert catalog["count"] >= 40
     ids = {p["id"] for p in catalog["platforms"]}
     assert "gofundme" in ids
     assert "justgiving" in ids
+    assert "helloasso" in ids
+    assert "opencollective" in ids
 
 
 def test_checkout_assist(client):

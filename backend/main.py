@@ -40,6 +40,7 @@ from platforms_catalog import PLATFORM_CATALOG, SUPPORTED_PLATFORM_COUNT
 from search_bridge import run_live_search_subprocess
 from search_fast import run_fast_search
 from search_live import run_live_search as run_live_search_inprocess
+from search_cache import get_cached, set_cached
 import donor_db
 import google_oauth
 import stripe_wallet
@@ -138,11 +139,17 @@ async def search_fast(
     merge_db: bool = Query(default=True),
 ) -> LiveSearchResponse:
     """Quick search: local index + GoFundMe Algolia (seconds, no full browser scrape)."""
-    try:
-        raw = await run_fast_search(q, limit=limit)
-    except Exception as exc:
-        logger.exception("fast search failed")
-        raise HTTPException(status_code=500, detail="Fast search failed") from exc
+    cache_key_platform = None
+    cached = get_cached(q, platform=cache_key_platform)
+    if cached:
+        raw = cached
+    else:
+        try:
+            raw = await run_fast_search(q, limit=limit)
+            set_cached(q, raw, platform=cache_key_platform)
+        except Exception as exc:
+            logger.exception("fast search failed")
+            raise HTTPException(status_code=500, detail="Fast search failed") from exc
 
     merged: dict[str, Campaign] = {}
     if merge_db:
@@ -186,20 +193,26 @@ async def search_live(
     Called when a user searches — results are persisted by default for Give Now ids.
     """
     platforms = [platform] if platform else None
-    try:
-        raw = await run_live_search_inprocess(
-            q,
-            limit=limit,
-            platforms=platforms,
-            persist=persist,
-        )
-    except Exception as exc:
-        logger.exception("live search failed, trying subprocess fallback")
+    cached = get_cached(q, platform=platform)
+    if cached:
+        raw = cached
+    else:
         try:
-            raw = await run_live_search_subprocess(q, limit=limit, persist=persist)
-        except Exception as sub_exc:
-            logger.exception("live search subprocess fallback failed")
-            raise HTTPException(status_code=500, detail="Live search failed") from sub_exc
+            raw = await run_live_search_inprocess(
+                q,
+                limit=limit,
+                platforms=platforms,
+                persist=persist,
+            )
+            if raw.get("campaigns"):
+                set_cached(q, raw, platform=platform)
+        except Exception as exc:
+            logger.exception("live search failed, trying subprocess fallback")
+            try:
+                raw = await run_live_search_subprocess(q, limit=limit, persist=persist)
+            except Exception as sub_exc:
+                logger.exception("live search subprocess fallback failed")
+                raise HTTPException(status_code=500, detail="Live search failed") from sub_exc
 
     live_rows = raw.get("campaigns") or []
     by_platform = raw.get("by_platform") or {}

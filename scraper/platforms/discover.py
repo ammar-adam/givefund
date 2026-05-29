@@ -46,6 +46,23 @@ def _category_from_text(text: str) -> str:
     return "community"
 
 
+def _campaign_from_url(url: str, platform: str) -> dict:
+    """Build a minimal campaign row from a listing URL (no extra page load)."""
+    slug = urlparse(url).path.rstrip("/").split("/")[-1]
+    title = slug.replace("-", " ").replace("_", " ").title() if slug else "Campaign"
+    return {
+        "title": title,
+        "story_snippet": None,
+        "photo_url": None,
+        "goal_amount": None,
+        "raised_amount": None,
+        "platform": platform,
+        "campaign_url": url,
+        "category": _category_from_text(title),
+        "location": None,
+    }
+
+
 def _normalize_url(href: str, base_url: str) -> Optional[str]:
     if not href or not any(m in href for m in ("http", "/")):
         return None
@@ -167,54 +184,94 @@ async def scrape_discover(config: DiscoverConfig) -> list[dict]:
     return campaigns
 
 
-async def scrape_search(config: DiscoverConfig, query: str) -> list[dict]:
-    """Live search: open platform search URL and harvest campaign links (fast, no enrich)."""
+async def scrape_search_on_page(
+    page,
+    config: DiscoverConfig,
+    query: str,
+    *,
+    enrich: bool = False,
+    limit: int | None = None,
+) -> list[dict]:
+    """Harvest campaign links from an already-open search results page."""
     if not config.search_url_template or not query.strip():
         return []
 
     search_url = config.search_url_template.format(query=quote_plus(query.strip()))
     campaigns: list[dict] = []
     seen: set[str] = set()
+    cap = limit or min(config.max_campaigns, 25)
 
+    logger.info("[%s] search %r -> %s", config.platform, query, search_url)
+    await page.goto(search_url, wait_until="domcontentloaded", timeout=25_000)
+    await page.wait_for_timeout(1500)
+
+    hrefs: set[str] = set()
+    try:
+        for raw in await page.eval_on_selector_all("a[href]", "els => els.map(e => e.href)"):
+            norm = _normalize_url(raw, config.base_url)
+            if norm and any(m in norm for m in config.link_markers):
+                hrefs.add(norm)
+    except Exception:
+        pass
+
+    html = await page.content()
+    for marker in config.link_markers:
+        pattern = rf'href="([^"]*{re.escape(marker)}[^"]*)"'
+        for match in re.findall(pattern, html, re.I):
+            norm = _normalize_url(match, config.base_url)
+            if norm:
+                hrefs.add(norm)
+
+    for url in list(hrefs)[:cap]:
+        if url in seen:
+            continue
+        seen.add(url)
+        if enrich:
+            campaign = await _extract_from_link(page, url, config.platform, None)
+        else:
+            campaign = _campaign_from_url(url, config.platform)
+        if campaign:
+            campaigns.append(campaign)
+
+    logger.info("[%s] search %r -> %d campaigns", config.platform, query, len(campaigns))
+    return campaigns
+
+
+async def scrape_search(
+    config: DiscoverConfig,
+    query: str,
+    *,
+    browser=None,
+    enrich: bool = False,
+    limit: int | None = None,
+) -> list[dict]:
+    """Live search: open platform search URL and harvest campaign links."""
+    if browser is not None:
+        page = await new_scrape_page(browser)
+        try:
+            return await scrape_search_on_page(
+                page, config, query, enrich=enrich, limit=limit
+            )
+        except Exception as exc:
+            logger.error("[%s] search failed %r: %s", config.platform, query, exc)
+            return []
+        finally:
+            await page.close()
+
+    campaigns: list[dict] = []
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
         page = await new_scrape_page(browser)
         try:
-            logger.info("[%s] search %r -> %s", config.platform, query, search_url)
-            await page.goto(search_url, wait_until="domcontentloaded", timeout=45_000)
-            await page.wait_for_timeout(3000)
-
-            hrefs: set[str] = set()
-            try:
-                for raw in await page.eval_on_selector_all("a[href]", "els => els.map(e => e.href)"):
-                    norm = _normalize_url(raw, config.base_url)
-                    if norm and any(m in norm for m in config.link_markers):
-                        hrefs.add(norm)
-            except Exception:
-                pass
-
-            html = await page.content()
-            for marker in config.link_markers:
-                pattern = rf'href="([^"]*{re.escape(marker)}[^"]*)"'
-                for match in re.findall(pattern, html, re.I):
-                    norm = _normalize_url(match, config.base_url)
-                    if norm:
-                        hrefs.add(norm)
-
-            for url in list(hrefs)[: config.max_campaigns]:
-                if url in seen:
-                    continue
-                seen.add(url)
-                campaign = await _extract_from_link(page, url, config.platform, None)
-                if campaign:
-                    campaigns.append(campaign)
+            campaigns = await scrape_search_on_page(
+                page, config, query, enrich=enrich, limit=limit
+            )
         except Exception as exc:
             logger.error("[%s] search failed %r: %s", config.platform, query, exc)
         finally:
             await page.close()
             await browser.close()
 
-    logger.info("[%s] search %r -> %d campaigns", config.platform, query, len(campaigns))
     return campaigns
 
 

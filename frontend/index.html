@@ -1569,7 +1569,7 @@
       });
       if (state.platform) params.set("platform", state.platform);
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 180000);
+      const timer = setTimeout(() => controller.abort(), 100000);
       try {
         const res = await fetch(`${API_URL}/search/live?${params}`, { signal: controller.signal });
         if (!res.ok) return null;
@@ -1645,7 +1645,7 @@
         renderGrid();
 
         if (q.length >= 2) {
-          setSearchStatus("Scraping platforms live for your search (may take 1–2 min)…", true);
+          setSearchStatus("Searching 40+ platforms live (usually under a minute)…", true);
           const fastPromise = fetchFastSearch(q);
           const livePromise = fetchLiveSearch(q);
 
@@ -1653,19 +1653,18 @@
           if (gen !== searchGeneration) return;
           if (fast?.campaigns?.length) {
             applySearchResults(fast, "fast");
-            setSearchStatus("Still scraping other platforms…", true);
           }
 
           const live = await livePromise;
           if (gen !== searchGeneration) return;
           if (live?.campaigns?.length) {
             applySearchResults(live, "live");
-            setSearchStatus("");
+            setSearchStatus(live.cached ? "Cached results (fresh within 5 min)" : "");
           } else if (live?.error === "timeout") {
             setSearchStatus(
               state.campaigns.length
-                ? "Live scrape timed out — showing partial results."
-                : "Live scrape timed out — try a shorter query."
+                ? "Some platforms timed out — showing partial results."
+                : "Search timed out — try a shorter query."
             );
           } else if (!state.campaigns.length) {
             setSearchStatus("No matches yet — try another keyword or clear filters.");

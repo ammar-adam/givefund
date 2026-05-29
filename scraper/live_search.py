@@ -1,8 +1,8 @@
 """
 Live cross-platform search — surface campaigns for any query (Palestine, cancer, etc.)
 
-Runs fast API/Algolia paths first, then Playwright search pages in parallel.
-Results can be persisted to givefund.db for future /campaigns queries.
+Fast path: Algolia + REST APIs in parallel.
+Browser path: one shared Chromium, many tabs, link-only harvest (no per-URL enrich).
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ import os
 import sys
 from typing import Any
 
-from playwright.async_api import async_playwright
+from playwright.async_api import Browser, async_playwright
 
 from platforms.algolia_client import AlgoliaSession
 from platforms.base import new_scrape_page
@@ -30,9 +30,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("live_search")
 
-DEFAULT_LIMIT = int(os.getenv("LIVE_SEARCH_LIMIT_PER_PLATFORM", "50"))
-DEFAULT_PARALLEL = int(os.getenv("LIVE_SEARCH_PARALLEL", "5"))
-MAX_ALGOLIA_PAGES = int(os.getenv("LIVE_SEARCH_ALGOLIA_PAGES", "6"))
+DEFAULT_LIMIT = int(os.getenv("LIVE_SEARCH_LIMIT_PER_PLATFORM", "20"))
+DEFAULT_PARALLEL = int(os.getenv("LIVE_SEARCH_PARALLEL", "10"))
+MAX_ALGOLIA_PAGES = int(os.getenv("LIVE_SEARCH_ALGOLIA_PAGES", "3"))
+PLATFORM_TIMEOUT_SEC = float(os.getenv("LIVE_SEARCH_PLATFORM_TIMEOUT_SEC", "22"))
 
 
 async def _ensure_algolia(session: AlgoliaSession, query: str) -> None:
@@ -48,9 +49,9 @@ async def _ensure_algolia(session: AlgoliaSession, query: str) -> None:
             await page.goto(
                 f"https://www.gofundme.com/s?q={quote(query)}",
                 wait_until="domcontentloaded",
-                timeout=60_000,
+                timeout=45_000,
             )
-            await page.wait_for_timeout(4000)
+            await page.wait_for_timeout(2500)
         finally:
             await page.close()
             await browser.close()
@@ -58,7 +59,8 @@ async def _ensure_algolia(session: AlgoliaSession, query: str) -> None:
 
 async def search_gofundme(query: str, limit: int) -> list[dict]:
     session = AlgoliaSession()
-    await _ensure_algolia(session, query)
+    if not session.ready():
+        await _ensure_algolia(session, query)
     if not session.ready():
         logger.warning("[gofundme] no Algolia credentials for live search")
         return []
@@ -87,28 +89,63 @@ def _entry_to_discover_config(entry: PlatformEntry) -> DiscoverConfig | None:
         start_urls=start_urls,
         link_markers=markers,
         search_url_template=entry.search_url_template,
-        max_campaigns=min(DEFAULT_LIMIT, 80),
+        max_campaigns=min(DEFAULT_LIMIT, 30),
     )
+
+
+async def _search_opencollective(query: str, limit: int) -> list[dict]:
+    from platforms.opencollective import search_opencollective
+
+    return await search_opencollective(query, max_results=limit)
 
 
 async def _search_platform_entry(
     entry: PlatformEntry,
     query: str,
     limit: int,
-    sem: asyncio.Semaphore,
+    *,
+    browser: Browser | None = None,
 ) -> list[dict]:
+    try:
+        if entry.scrape_method == "algolia":
+            return await search_gofundme(query, limit)
+        if entry.id == "globalgiving" or (
+            entry.scrape_method == "official_api" and entry.id == "globalgiving"
+        ):
+            return await search_globalgiving(query, max_results=limit)
+        if entry.id == "opencollective":
+            return await _search_opencollective(query, limit)
+        cfg = _entry_to_discover_config(entry)
+        if cfg and browser is not None:
+            return await scrape_search(cfg, query, browser=browser, enrich=False, limit=limit)
+        if cfg:
+            return await scrape_search(cfg, query, enrich=False, limit=limit)
+    except Exception as exc:
+        logger.error("[%s] live search error: %s", entry.id, exc)
+    return []
+
+
+async def _search_with_timeout(
+    entry: PlatformEntry,
+    query: str,
+    limit: int,
+    *,
+    browser: Browser | None,
+    sem: asyncio.Semaphore,
+) -> tuple[str, list[dict]]:
     async with sem:
         try:
-            if entry.scrape_method == "algolia":
-                return await search_gofundme(query, limit)
-            if entry.id == "globalgiving" or entry.scrape_method == "official_api":
-                return await search_globalgiving(query, max_results=limit)
-            cfg = _entry_to_discover_config(entry)
-            if cfg:
-                return await scrape_search(cfg, query)
+            rows = await asyncio.wait_for(
+                _search_platform_entry(entry, query, limit, browser=browser),
+                timeout=PLATFORM_TIMEOUT_SEC,
+            )
+            return entry.id, rows
+        except asyncio.TimeoutError:
+            logger.warning("[%s] live search timed out after %.0fs", entry.id, PLATFORM_TIMEOUT_SEC)
+            return entry.id, []
         except Exception as exc:
-            logger.error("[%s] live search error: %s", entry.id, exc)
-        return []
+            logger.error("[%s] live search failed: %s", entry.id, exc)
+            return entry.id, []
 
 
 async def run_live_search(
@@ -118,7 +155,7 @@ async def run_live_search(
     parallel: int = DEFAULT_PARALLEL,
     platforms: list[str] | None = None,
 ) -> dict[str, Any]:
-    """Fan out a search query across all configured platforms."""
+    """Fan out a search query across all configured platforms in parallel."""
     query = query.strip()
     if len(query) < 2:
         return {"query": query, "campaigns": [], "by_platform": {}, "total": 0}
@@ -128,39 +165,41 @@ async def run_live_search(
         allow = set(platforms)
         entries = [e for e in entries if e.id in allow]
 
-    # GoFundMe + GlobalGiving first (no browser pool contention)
-    by_platform: dict[str, int] = {}
-    merged: dict[str, dict] = {}
-
-    for entry in entries:
-        if entry.scrape_method not in ("algolia", "official_api"):
-            continue
-        rows = await _search_platform_entry(entry, query, limit_per_platform, asyncio.Semaphore(1))
-        by_platform[entry.id] = len(rows)
-        for row in rows:
-            url = row.get("campaign_url")
-            if url:
-                merged[url] = row
-
+    api_entries = [
+        e
+        for e in entries
+        if e.scrape_method in ("algolia", "official_api")
+        or e.id in ("globalgiving", "opencollective")
+    ]
     browser_entries = [
         e
         for e in entries
-        if e.scrape_method not in ("algolia", "official_api") and e.search_url_template
+        if e not in api_entries and e.search_url_template
     ]
-    sem = asyncio.Semaphore(parallel)
-    if browser_entries:
-        results = await asyncio.gather(
-            *[
-                _search_platform_entry(e, query, limit_per_platform, sem)
+
+    by_platform: dict[str, int] = {}
+    merged: dict[str, dict] = {}
+    sem = asyncio.Semaphore(max(1, parallel))
+
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        try:
+            tasks = [
+                _search_with_timeout(e, query, limit_per_platform, browser=browser, sem=sem)
+                for e in api_entries
+            ] + [
+                _search_with_timeout(e, query, limit_per_platform, browser=browser, sem=sem)
                 for e in browser_entries
             ]
-        )
-        for entry, rows in zip(browser_entries, results):
-            by_platform[entry.id] = len(rows)
-            for row in rows:
-                url = row.get("campaign_url")
-                if url:
-                    merged[url] = row
+            results = await asyncio.gather(*tasks)
+            for platform_id, rows in results:
+                by_platform[platform_id] = len(rows)
+                for row in rows:
+                    url = row.get("campaign_url")
+                    if url:
+                        merged[url] = row
+        finally:
+            await browser.close()
 
     campaigns = list(merged.values())
     logger.info(

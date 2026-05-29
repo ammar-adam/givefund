@@ -213,6 +213,150 @@
       "notes": "EU collective pots (Lydia group)"
     },
     {
+      "id": "opencollective",
+      "name": "Open Collective",
+      "region": "global",
+      "scrape_method": "official_api",
+      "search_method": "graphql_searchTerm",
+      "base_url": "https://opencollective.com",
+      "notes": "GraphQL accounts search — no browser"
+    },
+    {
+      "id": "freefunder",
+      "name": "FreeFunder",
+      "region": "us",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.freefunder.com/search?q={query}",
+      "base_url": "https://www.freefunder.com",
+      "link_markers": ["/f/", "/fundraiser/"]
+    },
+    {
+      "id": "plumfund",
+      "name": "Plumfund",
+      "region": "us",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.plumfund.com/search?q={query}",
+      "base_url": "https://www.plumfund.com",
+      "link_markers": ["/fundraiser/", "/campaign/"]
+    },
+    {
+      "id": "kofi",
+      "name": "Ko-fi",
+      "region": "global",
+      "scrape_method": "discover",
+      "search_url_template": "https://ko-fi.com/explore?search={query}",
+      "base_url": "https://ko-fi.com",
+      "link_markers": ["/ko-fi.com/", "/c/"]
+    },
+    {
+      "id": "liberapay",
+      "name": "Liberapay",
+      "region": "eu",
+      "scrape_method": "discover",
+      "base_url": "https://liberapay.com",
+      "discover_urls": ["https://liberapay.com/explore/public"],
+      "link_markers": ["/~"]
+    },
+    {
+      "id": "helloasso",
+      "name": "HelloAsso",
+      "region": "france",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.helloasso.com/associations/recherche?query={query}",
+      "base_url": "https://www.helloasso.com",
+      "link_markers": ["/associations/", "/collectes/"]
+    },
+    {
+      "id": "betterplace",
+      "name": "Betterplace",
+      "region": "germany",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.betterplace.org/en/search?q={query}",
+      "base_url": "https://www.betterplace.org",
+      "link_markers": ["/projects/"]
+    },
+    {
+      "id": "idonate",
+      "name": "iDonate",
+      "region": "ireland",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.idonate.ie/f?s={query}",
+      "base_url": "https://www.idonate.ie",
+      "link_markers": ["/fundraiser/", "/f/"]
+    },
+    {
+      "id": "steunactie",
+      "name": "Steunactie",
+      "region": "netherlands",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.steunactie.nl/zoeken?query={query}",
+      "base_url": "https://www.steunactie.nl",
+      "link_markers": ["/acties/", "/actie/"]
+    },
+    {
+      "id": "kisskissbankbank",
+      "name": "KissKissBankBank",
+      "region": "eu",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.kisskissbankbank.com/en/projects/search?search={query}",
+      "base_url": "https://www.kisskissbankbank.com",
+      "link_markers": ["/projects/"]
+    },
+    {
+      "id": "ulule",
+      "name": "Ulule",
+      "region": "eu",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.ulule.com/search/?q={query}",
+      "base_url": "https://www.ulule.com",
+      "link_markers": ["/projects/"]
+    },
+    {
+      "id": "catarse",
+      "name": "Catarse",
+      "region": "brazil",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.catarse.me/explore?search={query}",
+      "base_url": "https://www.catarse.me",
+      "link_markers": ["/projects/"]
+    },
+    {
+      "id": "goteo",
+      "name": "Goteo",
+      "region": "spain",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.goteo.org/explore?query={query}",
+      "base_url": "https://www.goteo.org",
+      "link_markers": ["/project/"]
+    },
+    {
+      "id": "vakinha",
+      "name": "Vakinha",
+      "region": "brazil",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.vakinha.com.br/busca?q={query}",
+      "base_url": "https://www.vakinha.com.br",
+      "link_markers": ["/vaquinha/", "/campanha/"]
+    },
+    {
+      "id": "rally",
+      "name": "Rally.org",
+      "region": "us",
+      "scrape_method": "discover",
+      "base_url": "https://www.rally.org",
+      "discover_urls": ["https://www.rally.org/fundraisers"],
+      "link_markers": ["/f/", "/fundraiser/"]
+    },
+    {
+      "id": "everyorg",
+      "name": "Every.org",
+      "region": "us",
+      "scrape_method": "discover",
+      "search_url_template": "https://www.every.org/search?q={query}",
+      "base_url": "https://www.every.org",
+      "link_markers": ["/every.org/", "/fundraiser/"]
+    },
+    {
       "id": "givelively",
       "name": "GiveLively",
       "region": "us",

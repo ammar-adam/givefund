@@ -12,7 +12,7 @@
 | Layer | What it does | Volume |
 |-------|----------------|--------|
 | **Bulk ingest** | `live_runner.py` — Algolia pagination (GFM), API pages (GlobalGiving), discover scroll | Thousands offline |
-| **Live search** | User types *Palestine* / *cancer* → fan-out to every platform with search URL or API | Hundreds per query, instant |
+| **Live search** | User types *Palestine* / *cancer* → fan-out to **40+ platforms** (shared browser, parallel) | Hundreds per query, ~30–90s |
 | **Persist** | `?persist=true` on `/search/live` or `--persist` on CLI | Grows DB from real demand |
 
 **20 per platform is a config floor, not a ceiling.** Set `DISCOVER_MAX_CAMPAIGNS=200`, `GFM_MAX_ALGOLIA_PAGES=60`, `LAUNCHGOOD_MAX_ENRICH=120`.
