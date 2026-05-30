@@ -60,6 +60,13 @@ jobs:
         env:
           DB_PATH: ${{ github.workspace }}/givefund.db
 
+      - name: Strip donor_profiles before public release
+        run: |
+          # Donor wallet data must NEVER be published to GitHub Releases.
+          # Create a sanitised release copy with only campaign data.
+          cp givefund.db givefund-release.db
+          sqlite3 givefund-release.db "DROP TABLE IF EXISTS donor_profiles;"
+
       - name: Publish database to GitHub Release (Render DB_DOWNLOAD_URL)
         env:
           GH_TOKEN: ${{ github.token }}
@@ -67,7 +74,8 @@ jobs:
           gh release view db-latest 2>/dev/null || gh release create db-latest \
             --title "GiveFund campaign database" \
             --notes "Automated snapshot from Live Scrape workflow. Set Render DB_DOWNLOAD_URL to this release asset."
-          gh release upload db-latest givefund.db db-manifest.json --clobber
+          # Upload the sanitised copy (no donor_profiles table)
+          gh release upload db-latest givefund-release.db db-manifest.json --clobber
 
       - name: Upload database artifact
         uses: actions/upload-artifact@v4
