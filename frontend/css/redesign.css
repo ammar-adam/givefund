@@ -1,0 +1,417 @@
+/**
+ * GiveFund REDESIGN layer — loads after inline styles to override.
+ * Direction: cinematic dark hero → bright glassy content, vibrant
+ * coral→amber→violet gradient identity, bento + card-grid layouts.
+ * Pairs with motion.css/motion.js. Keeps all JS hooks/IDs intact.
+ */
+
+:root {
+  --bg: #F6F1E9;
+  --surface: #FFFFFF;
+  --ink: #17130F;
+  --muted: #6F665C;
+  --muted-light: #A89F93;
+  --border: #E7DECF;
+  --border: #E8DFD2;
+  --border-soft: #EFE8DC;
+  --accent: #FF5A3C;
+  --accent-hover: #F0431F;
+  --accent-soft: rgba(255, 90, 60, 0.12);
+  --amber: #FFB23E;
+  --violet: #7C5CFF;
+  --ink-deep: #120F0C;
+
+  --grad-warm: linear-gradient(120deg, #FF5A3C 0%, #FF8A3C 45%, #FFB23E 100%);
+  --grad-rich: linear-gradient(125deg, #FF5A3C 0%, #FF7E58 35%, #FFB23E 70%, #7C5CFF 130%);
+
+  --radius: 14px;
+  --radius-lg: 24px;
+  --radius-xl: 30px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 2px 10px rgba(23, 19, 15, 0.05);
+  --shadow-md: 0 16px 44px rgba(23, 19, 15, 0.10);
+  --shadow-lg: 0 30px 70px rgba(23, 19, 15, 0.16);
+
+  --glass: rgba(255, 255, 255, 0.7);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+body {
+  background: var(--bg);
+  font-feature-settings: "ss01" on, "cv01" on;
+}
+
+/* Subtle page texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 85% -5%, rgba(255, 178, 62, 0.10), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 5% 8%, rgba(124, 92, 255, 0.07), transparent 60%);
+}
+
+/* ─────────────── NAV ─────────────── */
+.nav {
+  padding: 22px 44px;
+}
+
+.nav:not(.is-scrolled) .logo,
+.nav:not(.is-scrolled) .nav-links a {
+  color: #FBF7F0;
+}
+
+.nav:not(.is-scrolled) .nav-links a { color: rgba(251, 247, 240, 0.78); }
+.nav:not(.is-scrolled) .nav-links a:hover { color: #fff; }
+
+.nav:not(.is-scrolled) .nav-cta {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+}
+
+.nav.is-scrolled { padding: 14px 44px; }
+
+.logo {
+  font-size: 18px;
+  letter-spacing: -0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-radius: 5px;
+  background: var(--grad-warm);
+  box-shadow: 0 2px 8px rgba(255, 90, 60, 0.5);
+}
+
+.nav-cta {
+  background: var(--ink);
+  border-radius: var(--radius-pill);
+}
+.nav.is-scrolled .nav-cta { background: var(--ink); }
+.nav-cta:hover { background: var(--accent); }
+
+/* ─────────────── HERO (cinematic dark) ─────────────── */
+.hero {
+  min-height: 92vh;
+  display: flex;
+  align-items: center;
+  max-width: none;
+  margin: 0;
+  padding: 140px 24px 90px;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 120%, rgba(255, 90, 60, 0.22), transparent 60%),
+    linear-gradient(180deg, #16110D 0%, #1E1813 60%, #241C15 100%);
+  border-radius: 0 0 36px 36px;
+}
+
+.hero-inner {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.hero-bg {
+  opacity: 0.16;
+  mix-blend-mode: luminosity;
+  border-radius: inherit;
+}
+
+.hero-aurora { filter: blur(72px); opacity: 0.9; }
+.hero-aurora .orb-c {
+  background: radial-gradient(circle, rgba(124, 92, 255, 0.4) 0%, transparent 70%);
+}
+
+.hero-badge {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(251, 247, 240, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.hero h1 {
+  max-width: 940px;
+  font-size: clamp(46px, 7.5vw, 86px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  color: #FCF8F2;
+}
+
+.hero h1 em {
+  background: var(--grad-warm);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-lead {
+  max-width: 600px;
+  font-size: clamp(17px, 2vw, 20px);
+  color: rgba(243, 236, 227, 0.74);
+}
+
+.hero .btn-primary {
+  background: var(--grad-warm);
+  background-size: 160% 160%;
+  color: #fff;
+  padding: 16px 32px;
+  font-size: 16px;
+}
+.hero .btn-primary:hover { background-position: 100% 0; }
+
+.hero .btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #FCF8F2;
+  padding: 16px 30px;
+  font-size: 16px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+.hero .btn-ghost:hover { border-color: rgba(255, 255, 255, 0.55); }
+
+/* ─────────────── MARQUEE ─────────────── */
+.marquee-section {
+  padding: 40px 0 52px;
+  border: none;
+  margin-top: -8px;
+}
+
+.marquee-section .platform-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-pill);
+  padding: 11px 22px;
+}
+
+/* ─────────────── CAPABILITIES (bento) ─────────────── */
+.capabilities {
+  gap: 20px;
+  padding: 40px 40px 24px;
+}
+
+.cap-card {
+  position: relative;
+  padding: 34px 30px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, #fff 0%, #FFFDFA 100%);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.cap-card::after {
+  content: "";
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  filter: blur(40px);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.cap-card:hover::after { opacity: 1; }
+
+.cap-card .cap-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+  background: var(--grad-warm);
+  color: #fff;
+  font-size: 24px;
+  box-shadow: 0 8px 20px rgba(255, 90, 60, 0.32);
+}
+
+.cap-card h3 { font-size: 28px; }
+
+/* ─────────────── METRICS (glass strip) ─────────────── */
+.metrics {
+  gap: 18px;
+  padding: 36px 40px 60px;
+}
+
+.metric {
+  padding: 38px 32px;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.metric-value {
+  font-size: clamp(38px, 5vw, 52px);
+  background: linear-gradient(135deg, var(--ink) 0%, #4a4038 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.metric:nth-child(2) .metric-value { background: var(--grad-warm); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ─────────────── FEED / SEARCH ─────────────── */
+.feed-section { padding: 24px 40px 96px; }
+
+.feed-header h2 {
+  font-size: clamp(34px, 5vw, 52px);
+  letter-spacing: -0.03em;
+}
+
+.search-panel { max-width: 720px; margin-top: 22px; }
+
+.search-panel-inner { background: var(--surface); }
+
+.search-input { height: 56px; font-size: 16px; }
+.search-panel .btn-search {
+  height: 56px;
+  background: var(--grad-warm);
+  background-size: 160% 160%;
+  padding: 0 30px;
+  font-size: 15px;
+}
+.search-panel .btn-search:hover { background-position: 100% 0; }
+
+/* Campaign cards → responsive GRID of vertical cards */
+.feed {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+  gap: 24px;
+}
+
+.signal-card,
+.skeleton-card {
+  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.signal-media {
+  min-height: 0;
+  aspect-ratio: 16 / 10;
+  width: 100%;
+}
+.signal-media img { min-height: 0; height: 100%; }
+
+.signal-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 55%, rgba(18, 15, 12, 0.42) 100%);
+  pointer-events: none;
+}
+
+.skeleton-media { aspect-ratio: 16 / 10; min-height: 0; }
+
+.signal-body { padding: 22px 22px 24px; gap: 12px; }
+
+.signal-title { font-size: 20px; line-height: 1.28; }
+
+.signal-footer {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.funding-meta { min-width: 0; width: 100%; }
+
+.progress-track { height: 7px; background: var(--border-soft); }
+.progress-fill { background: var(--grad-warm); }
+
+.donate-wrap { align-items: stretch; width: 100%; }
+
+.cta-button {
+  justify-content: center;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 12px;
+  background: var(--ink);
+  font-size: 14px;
+}
+.cta-button:hover { background: var(--accent); }
+
+.donate-hint { text-align: center; max-width: none; }
+
+.tag {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+}
+.tag-platform { background: var(--badge-bg); color: var(--muted); }
+
+/* Pills + selects */
+.pill { padding: 9px 18px; border-radius: var(--radius-pill); }
+.pill[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.select-wrap select { height: 42px; border-radius: var(--radius-pill); }
+
+/* ─────────────── WALLET BAND ─────────────── */
+.wallet-band {
+  max-width: 760px;
+  padding: 40px 44px;
+  border-radius: var(--radius-xl);
+}
+.wallet-band h2 { font-size: 30px; }
+.wallet-band .btn-primary {
+  background: var(--grad-warm);
+  color: #fff;
+}
+
+/* ─────────────── CTA BAND ─────────────── */
+.cta-band {
+  border-radius: var(--radius-xl);
+  background: linear-gradient(155deg, #1A1410 0%, #241B14 100%);
+  padding: 72px 48px;
+}
+.cta-band h2 { font-size: clamp(34px, 5vw, 56px); }
+.cta-band .btn-primary {
+  background: var(--grad-warm);
+  color: #fff;
+  padding: 16px 34px;
+}
+.cta-band .btn-primary:hover { background: #fff; color: var(--ink); }
+
+/* ─────────────── FAQ + FOOTER ─────────────── */
+.faq { padding-bottom: 96px; }
+.faq h2 { font-size: clamp(28px, 4vw, 40px); }
+
+.footer {
+  background: var(--ink-deep);
+  padding: 64px 40px 56px;
+  border-radius: 36px 36px 0 0;
+}
+.footer .logo { justify-content: center; font-size: 22px; }
+
+/* ─────────────── RESPONSIVE ─────────────── */
+@media (max-width: 768px) {
+  .nav, .nav.is-scrolled { padding: 16px 20px; }
+  .hero { min-height: 86vh; padding: 120px 20px 72px; border-radius: 0 0 24px 24px; }
+  .feed { grid-template-columns: 1fr; }
+  .capabilities, .metrics, .feed-section { padding-left: 20px; padding-right: 20px; }
+  .wallet-band { padding: 30px 24px; }
+  .cta-band { padding: 52px 26px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero .btn-primary,
+  .search-panel .btn-search { background-position: 0 0 !important; }
+}
