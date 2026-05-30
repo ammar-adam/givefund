@@ -127,6 +127,19 @@ body::before {
   border-radius: inherit;
 }
 
+/* 3D particle canvas */
+.hero-3d-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.2s var(--ease-out-expo);
+}
+.hero-3d-canvas.ready { opacity: 1; }
+
 .hero-aurora { filter: blur(72px); opacity: 0.9; }
 .hero-aurora .orb-c {
   background: radial-gradient(circle, rgba(124, 92, 255, 0.4) 0%, transparent 70%);

@@ -1,0 +1,94 @@
+/**
+ * Shared brand cohesion for give.html / wallet.html.
+ * Loads after each page's inline <style> to align with the index redesign:
+ * warm coral→amber gradient identity, softer cards, gradient CTAs.
+ */
+:root {
+  --bg: #F6F1E9;
+  --surface: #FFFFFF;
+  --ink: #17130F;
+  --muted: #6F665C;
+  --border: #E8DFD2;
+  --accent: #FF5A3C;
+  --accent-hover: #F0431F;
+  --grad-warm: linear-gradient(120deg, #FF5A3C 0%, #FF8A3C 45%, #FFB23E 100%);
+}
+
+body {
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 85% -5%, rgba(255, 178, 62, 0.12), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 5% 8%, rgba(124, 92, 255, 0.08), transparent 60%);
+}
+
+.wrap { max-width: 560px; }
+
+h1 {
+  font-size: clamp(2rem, 5vw, 2.6rem);
+  letter-spacing: -0.02em;
+}
+
+h1 em {
+  font-style: italic;
+  background: var(--grad-warm);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.card {
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  box-shadow: 0 16px 44px rgba(23, 19, 15, 0.08);
+  background: linear-gradient(180deg, #fff 0%, #FFFDFA 100%);
+}
+
+input[type=email],
+input[type=text] {
+  border-radius: 11px;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+input[type=email]:focus,
+input[type=text]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(255, 90, 60, 0.16);
+}
+
+.cta {
+  background: var(--grad-warm);
+  background-size: 160% 160%;
+  border-radius: 999px;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.22s, background-position 0.5s;
+}
+
+.cta:hover {
+  transform: translateY(-2px);
+  background-position: 100% 0;
+  box-shadow: 0 14px 32px rgba(255, 90, 60, 0.34);
+}
+
+.cta:disabled {
+  background: #d8d2c8;
+  transform: none;
+  box-shadow: none;
+}
+
+.back { color: var(--accent); font-weight: 600; }
+.back:hover { color: var(--accent-hover); }
+
+a:not(.back):not(.cta) { color: var(--accent-hover); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cta:hover { transform: none; background-position: 0 0; }
+}
