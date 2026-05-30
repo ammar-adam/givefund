@@ -42,6 +42,7 @@ from search_fast import run_fast_search
 from search_live import run_live_search as run_live_search_inprocess
 from search_cache import get_cached, set_cached
 from search_stream import stream_live_search_events
+from search_targets import get_search_targets
 import donor_db
 import google_oauth
 import stripe_wallet
@@ -260,6 +261,16 @@ async def search_live(
         persisted=raw.get("saved") or raw.get("persist_queued"),
         error=raw.get("error"),
     )
+
+
+@app.get("/search/targets")
+async def search_targets() -> dict:
+    """Platforms queried during live search (for UI progress)."""
+    try:
+        return get_search_targets()
+    except Exception as exc:
+        logger.exception("search targets failed")
+        raise HTTPException(status_code=500, detail="Could not list search targets") from exc
 
 
 @app.get("/search/live/stream")

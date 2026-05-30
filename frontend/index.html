@@ -273,6 +273,49 @@
 
     #searchStatus.busy { color: var(--accent); }
 
+    .platform-progress {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin: 0 auto 14px;
+      max-width: 900px;
+      max-height: 100px;
+      overflow-y: auto;
+      padding: 0 8px;
+    }
+
+    .platform-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--muted);
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .platform-chip.pending { opacity: 0.55; }
+
+    .platform-chip.loading {
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      background: #eff6ff;
+    }
+
+    .platform-chip.ok {
+      border-color: #86efac;
+      color: #166534;
+      background: #dcfce7;
+    }
+
+    .platform-chip.empty {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
     .load-more-wrap { text-align: center; margin: 28px 0 8px; }
 
     .btn-load-more {
@@ -982,6 +1025,7 @@
           <button type="button" class="btn-search" id="searchBtn">Search</button>
         </div>
         <p id="searchStatus" aria-live="polite"></p>
+        <div id="searchPlatformProgress" class="platform-progress hidden" aria-label="Search progress by platform"></div>
         <p id="resultsMeta" class="results-meta"></p>
         <p id="liveStatus" class="live-status" aria-live="polite">
           <span class="live-dot" id="liveDot" aria-hidden="true"></span>
@@ -1137,6 +1181,7 @@
       usingMock: false,
       liveSearch: false,
       catalog: PLATFORM_CATALOG,
+      searchPlatformStatus: {},
       refreshIntervalMs: 120000,
       stats: { total_campaigns: 0, platforms_indexed: 0, platforms_supported: 0 }
     };
@@ -1178,6 +1223,75 @@
       const el = $("#searchStatus");
       el.textContent = msg || "";
       el.classList.toggle("busy", Boolean(busy));
+    }
+
+    function initPlatformProgress(platformIds) {
+      const wrap = $("#searchPlatformProgress");
+      if (!platformIds?.length) {
+        wrap.classList.add("hidden");
+        wrap.innerHTML = "";
+        return;
+      }
+      state.searchPlatformStatus = {};
+      platformIds.forEach((id) => {
+        state.searchPlatformStatus[id] = "pending";
+      });
+      renderPlatformProgress();
+      wrap.classList.remove("hidden");
+    }
+
+    function updatePlatformProgress(platformId, status) {
+      if (!platformId) return;
+      state.searchPlatformStatus[platformId] = status;
+      renderPlatformProgress();
+    }
+
+    function renderPlatformProgress() {
+      const wrap = $("#searchPlatformProgress");
+      const entries = Object.entries(state.searchPlatformStatus);
+      if (!entries.length) {
+        wrap.classList.add("hidden");
+        return;
+      }
+      const done = entries.filter(([, s]) => s === "ok" || s === "empty").length;
+      wrap.innerHTML = entries
+        .map(([id, st]) => {
+          const label = platformLabel(id);
+          const count =
+            st === "ok" && state.lastByPlatform?.[id] != null
+              ? ` ${state.lastByPlatform[id]}`
+              : "";
+          return `<span class="platform-chip ${st}" title="${escapeHtml(id)}">${escapeHtml(label)}${count}</span>`;
+        })
+        .join("");
+      const total = entries.length;
+      if (done < total) {
+        setSearchStatus(`Searching platforms live (${done}/${total})…`, true);
+      }
+    }
+
+    function hidePlatformProgress() {
+      $("#searchPlatformProgress").classList.add("hidden");
+      state.searchPlatformStatus = {};
+    }
+
+    function mergeCampaignMaps(urlMap, campaigns) {
+      for (const c of campaigns || []) {
+        if (c?.campaign_url) urlMap.set(c.campaign_url, c);
+      }
+      return [...urlMap.values()];
+    }
+
+    function applyMergedSearch(urlMap, byPlatform, phase) {
+      state.lastByPlatform = byPlatform || {};
+      const campaigns = filterClientCampaigns(mergeCampaignMaps(urlMap, []));
+      state.campaigns = campaigns;
+      state.total = campaigns.length;
+      state.liveSearch = true;
+      state.pages = 1;
+      showLiveBanner(state.total, byPlatform, phase);
+      updateResultsMeta();
+      renderGrid();
     }
 
     function updateResultsMeta() {
@@ -1560,7 +1674,7 @@
       }
     }
 
-    async function streamLiveSearch(query, gen) {
+    async function streamLiveSearch(query, gen, urlMap, byPlatform) {
       const params = new URLSearchParams({
         q: query,
         limit: "80",
@@ -1568,15 +1682,24 @@
       });
       if (state.platform) params.set("platform", state.platform);
 
-      const urlMap = new Map();
-      const byPlatform = {};
       let finalPayload = null;
+      let useEventSource = typeof EventSource !== "undefined";
+
+      if (!useEventSource) {
+        return fetchLiveSearch(query);
+      }
 
       return new Promise((resolve) => {
         const es = new EventSource(`${API_URL}/search/live/stream?${params}`);
         const timer = setTimeout(() => {
           es.close();
-          resolve(finalPayload || { campaigns: [...urlMap.values()], by_platform: byPlatform, total: urlMap.size });
+          resolve(
+            finalPayload || {
+              campaigns: mergeCampaignMaps(urlMap, []),
+              by_platform: byPlatform,
+              total: urlMap.size,
+            }
+          );
         }, 90000);
 
         es.onmessage = (ev) => {
@@ -1592,33 +1715,31 @@
             return;
           }
 
+          if (data.type === "start" && data.platforms?.length) {
+            initPlatformProgress(data.platforms);
+          }
+
           if (data.type === "platform") {
-            for (const c of data.campaigns || []) {
-              if (c.campaign_url && !urlMap.has(c.campaign_url)) {
-                urlMap.set(c.campaign_url, c);
-              }
-            }
-            byPlatform[data.platform] = data.count ?? 0;
-            const payload = {
-              campaigns: [...urlMap.values()],
-              by_platform: { ...byPlatform },
-              total: urlMap.size,
-            };
-            applySearchResults(payload, "live");
-            setSearchStatus(`Found ${urlMap.size} campaigns — more platforms still loading…`, true);
+            const st = data.count > 0 ? "ok" : "empty";
+            updatePlatformProgress(data.platform, st);
+            if (data.count > 0) byPlatform[data.platform] = data.count;
+            mergeCampaignMaps(urlMap, data.campaigns || []);
+            applyMergedSearch(urlMap, { ...byPlatform }, "live");
           }
 
           if (data.type === "done") {
-            for (const c of data.campaigns || []) {
-              if (c.campaign_url) urlMap.set(c.campaign_url, c);
+            mergeCampaignMaps(urlMap, data.campaigns || []);
+            Object.assign(byPlatform, data.by_platform || {});
+            for (const [pid, n] of Object.entries(byPlatform)) {
+              updatePlatformProgress(pid, n > 0 ? "ok" : "empty");
             }
             finalPayload = {
-              campaigns: [...urlMap.values()],
-              by_platform: data.by_platform || byPlatform,
+              campaigns: mergeCampaignMaps(urlMap, []),
+              by_platform: byPlatform,
               total: data.total ?? urlMap.size,
               cached: false,
             };
-            applySearchResults(finalPayload, "live");
+            applyMergedSearch(urlMap, byPlatform, "live");
             clearTimeout(timer);
             es.close();
             resolve(finalPayload);
@@ -1627,20 +1748,31 @@
           if (data.type === "error") {
             clearTimeout(timer);
             es.close();
-            resolve(finalPayload || { campaigns: [...urlMap.values()], error: data.detail });
+            resolve(
+              finalPayload || {
+                campaigns: mergeCampaignMaps(urlMap, []),
+                error: data.detail,
+              }
+            );
           }
         };
 
         es.onerror = () => {
           clearTimeout(timer);
           es.close();
-          resolve(
-            finalPayload || {
-              campaigns: [...urlMap.values()],
-              by_platform: byPlatform,
-              total: urlMap.size,
+          fetchLiveSearch(query).then((fallback) => {
+            if (fallback?.campaigns?.length) {
+              mergeCampaignMaps(urlMap, fallback.campaigns);
+              Object.assign(byPlatform, fallback.by_platform || {});
             }
-          );
+            resolve(
+              fallback || {
+                campaigns: mergeCampaignMaps(urlMap, []),
+                by_platform: byPlatform,
+                total: urlMap.size,
+              }
+            );
+          });
         };
       });
     }
@@ -1715,14 +1847,18 @@
       renderSkeletons();
       state.liveSearch = false;
       $("#liveSearchBanner").classList.add("hidden");
+      hidePlatformProgress();
       $("#loadMoreBtn").classList.add("hidden");
       const q = state.search;
+      const urlMap = new Map();
+      const byPlatform = {};
 
       try {
         setSearchStatus("Searching local index…", true);
         let campaigns = await fetchFromIndex();
         if (gen !== searchGeneration) return;
-        state.campaigns = filterClientCampaigns(campaigns);
+        mergeCampaignMaps(urlMap, campaigns);
+        state.campaigns = filterClientCampaigns(mergeCampaignMaps(urlMap, []));
         state.total = state.campaigns.length;
         state.usingMock = false;
         $("#mockBanner").classList.add("hidden");
@@ -1730,28 +1866,49 @@
         renderGrid();
 
         if (q.length >= 2) {
-          setSearchStatus("Streaming live results from 35+ platforms…", true);
+          try {
+            const targets = await fetch(`${API_URL}/search/targets`);
+            if (targets.ok) {
+              const t = await targets.json();
+              const all = [...(t.api || []), ...(t.http || [])];
+              initPlatformProgress(all);
+            }
+          } catch {
+            /* progress optional */
+          }
+
+          setSearchStatus("Quick search (APIs + top platforms)…", true);
           const fastPromise = fetchFastSearch(q);
-          const livePromise = streamLiveSearch(q, gen);
+          const livePromise = streamLiveSearch(q, gen, urlMap, byPlatform);
 
           const fast = await fastPromise;
           if (gen !== searchGeneration) return;
           if (fast?.campaigns?.length) {
-            applySearchResults(fast, "fast");
+            mergeCampaignMaps(urlMap, fast.campaigns);
+            Object.assign(byPlatform, fast.by_platform || {});
+            for (const [pid, n] of Object.entries(fast.by_platform || {})) {
+              if (n > 0) updatePlatformProgress(pid, "ok");
+            }
+            applyMergedSearch(urlMap, byPlatform, "fast");
           }
 
           const live = await livePromise;
           if (gen !== searchGeneration) return;
-          if (live?.campaigns?.length) {
-            applySearchResults(live, "live");
-            setSearchStatus(live.cached ? "Cached results (fresh within 5 min)" : "");
+          if (live?.campaigns?.length || urlMap.size) {
+            applyMergedSearch(urlMap, byPlatform, "live");
+            const okCount = Object.values(state.searchPlatformStatus).filter((s) => s === "ok").length;
+            setSearchStatus(
+              live?.cached
+                ? "Cached results (fresh within 5 min)"
+                : `Live search complete · ${urlMap.size} campaigns · ${okCount} platforms matched`
+            );
           } else if (live?.error === "timeout") {
             setSearchStatus(
-              state.campaigns.length
+              urlMap.size
                 ? "Some platforms timed out — showing partial results."
                 : "Search timed out — try a shorter query."
             );
-          } else if (!state.campaigns.length) {
+          } else if (!urlMap.size) {
             setSearchStatus("No matches yet — try another keyword or clear filters.");
           } else {
             setSearchStatus("");
@@ -1766,6 +1923,7 @@
         state.total = state.campaigns.length;
         state.usingMock = true;
         $("#mockBanner").classList.remove("hidden");
+        hidePlatformProgress();
         setSearchStatus("");
       }
       updateResultsMeta();

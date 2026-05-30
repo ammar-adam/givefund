@@ -111,6 +111,16 @@ def test_platform_catalog(client):
     assert "opencollective" in ids
 
 
+def test_search_targets(client):
+    """Live search target list includes API + HTTP platforms."""
+    response = client.get("/search/targets")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total"] >= 30
+    assert "gofundme" in data["api"]
+    assert len(data["http"]) >= 20
+
+
 def test_checkout_assist(client):
     """Express Give checkout assist returns donate URL."""
     response = client.get("/campaigns/1/checkout?email=donor@example.com")

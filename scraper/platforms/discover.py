@@ -84,6 +84,28 @@ def extract_hrefs_from_html(html: str, config: DiscoverConfig) -> set[str]:
             norm = _normalize_url(match, config.base_url)
             if norm:
                 hrefs.add(norm)
+    # Broad href sweep (catches JSON-escaped and alternate attribute order)
+    for raw in re.findall(r'href=["\']([^"\']+)["\']', html, re.I):
+        norm = _normalize_url(raw, config.base_url)
+        if norm and any(m in norm for m in config.link_markers):
+            hrefs.add(norm)
+    # Next.js __NEXT_DATA__ often lists project URLs
+    for block in re.findall(
+        r'<script[^>]*id="__NEXT_DATA__"[^>]*>([^<]+)</script>',
+        html,
+        re.I | re.S,
+    ):
+        for marker in config.link_markers:
+            core = marker.strip("/")
+            if not core:
+                continue
+            for path in re.findall(
+                rf'"(/?[^"]*{re.escape(core)}[^"]*)"',
+                block,
+            ):
+                norm = _normalize_url(path, config.base_url)
+                if norm:
+                    hrefs.add(norm)
     return hrefs
 
 

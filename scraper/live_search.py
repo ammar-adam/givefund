@@ -215,6 +215,13 @@ async def run_live_search_stream(
         c for c in discover_search_configs() if not allow or c.platform in allow
     ]
     api_ids = [p for p in API_PLATFORM_IDS if not allow or p in allow]
+    platform_order = api_ids + [c.platform for c in http_configs]
+    yield {
+        "type": "start",
+        "query": query,
+        "platforms": platform_order,
+        "total_platforms": len(platform_order),
+    }
 
     by_platform: dict[str, int] = {}
     merged: dict[str, dict] = {}
@@ -266,14 +273,14 @@ async def run_live_search_stream(
                     pid, rows = platform_id, []
 
                 new_rows = _merge_rows(merged, by_platform, pid, rows)
-                if new_rows:
-                    yield {
-                        "type": "platform",
-                        "platform": pid,
-                        "campaigns": new_rows,
-                        "count": len(rows),
-                        "total_so_far": len(merged),
-                    }
+                yield {
+                    "type": "platform",
+                    "platform": pid,
+                    "campaigns": new_rows,
+                    "count": len(rows),
+                    "total_so_far": len(merged),
+                    "status": "ok" if rows else "empty",
+                }
 
                 if (
                     PW_FALLBACK
@@ -299,15 +306,15 @@ async def run_live_search_stream(
                 for task in asyncio.as_completed(pw_tasks):
                     pid, rows = await task
                     new_rows = _merge_rows(merged, by_platform, pid, rows)
-                    if new_rows:
-                        yield {
-                            "type": "platform",
-                            "platform": pid,
-                            "campaigns": new_rows,
-                            "count": len(rows),
-                            "total_so_far": len(merged),
-                            "fallback": "playwright",
-                        }
+                    yield {
+                        "type": "platform",
+                        "platform": pid,
+                        "campaigns": new_rows,
+                        "count": len(rows),
+                        "total_so_far": len(merged),
+                        "status": "ok" if rows else "empty",
+                        "fallback": "playwright",
+                    }
             finally:
                 await browser.close()
 

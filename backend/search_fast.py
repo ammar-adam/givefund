@@ -11,7 +11,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 SCRAPER_DIR = Path(__file__).resolve().parents[1] / "scraper"
-FAST_HTTP_PLATFORMS = int(os.getenv("FAST_SEARCH_HTTP_PLATFORMS", "12"))
+FAST_HTTP_PLATFORMS = int(os.getenv("FAST_SEARCH_HTTP_PLATFORMS", "20"))
 FAST_HTTP_TIMEOUT = float(os.getenv("FAST_SEARCH_HTTP_TIMEOUT_SEC", "6"))
 
 
@@ -49,8 +49,8 @@ async def run_fast_search(query: str, *, limit: int = 80) -> dict:
 
     http_configs = discover_search_configs()[:FAST_HTTP_PLATFORMS]
     priority = (
-        "justgiving",
         "launchgood",
+        "justgiving",
         "givebutter",
         "ketto",
         "givesendgo",
