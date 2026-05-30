@@ -64,9 +64,9 @@
   }
 
   function initMetricCounters() {
-    document.querySelectorAll(".metric[data-metric]").forEach((metric) => {
+    document.querySelectorAll(".stat-pill[data-metric], .metric[data-metric]").forEach((metric) => {
       if (metric.dataset.counted === "1") return;
-      const valueEl = metric.querySelector(".metric-value");
+      const valueEl = metric.querySelector(".metric-value, .stat-pill-value");
       const raw = metric.dataset.metric;
       if (!valueEl || raw === undefined || raw === "" || raw === "—") return;
       metric.dataset.counted = "1";

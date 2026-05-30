@@ -976,15 +976,17 @@
 <body>
   <div class="shell">
     <nav class="nav">
-      <div class="nav-left">
-        <span class="logo">GiveFund</span>
-        <div class="nav-links">
-          <a href="#campaigns">Campaigns</a>
-          <a href="#platforms">Platforms</a>
-          <a href="#faq">FAQ</a>
-        </div>
+      <a class="logo" href="#">GiveFund</a>
+      <div class="nav-links">
+        <a href="#campaigns">Discover</a>
+        <a href="#platforms">Platforms</a>
+        <a href="#how">How it works</a>
+        <a href="#faq">FAQ</a>
       </div>
-      <a class="nav-cta" href="#campaigns">Explore campaigns</a>
+      <div class="nav-actions">
+        <a class="nav-wallet" href="wallet.html">Wallet</a>
+        <a class="nav-cta" href="#campaigns">Explore</a>
+      </div>
     </nav>
 
     <header class="hero">
@@ -995,15 +997,39 @@
       </div>
       <div class="hero-grain" aria-hidden="true"></div>
       <div class="hero-bg" aria-hidden="true"></div>
-      <div class="hero-inner">
-        <p class="hero-badge"><span class="hero-badge-dot" aria-hidden="true"></span> Live index · 34k+ campaigns</p>
-        <h1><em>Find the help</em> someone needs — in one searchable place.</h1>
-        <p class="hero-lead">
-          Search our indexed fundraisers plus live GoFundMe results. Optional “+ More sites” tries other platforms when they allow it — always free, no middleman fees.
-        </p>
-        <div class="hero-actions">
-          <a class="btn-primary" href="#campaigns">See live campaigns</a>
-          <a class="btn-ghost" href="#platforms" id="heroPlatformLink">20+ platforms</a>
+      <div class="hero-inner hero-split">
+        <div class="hero-copy">
+          <p class="hero-badge"><span class="hero-badge-dot" aria-hidden="true"></span> Live public index</p>
+          <h1><em>Find the help</em> someone needs — across every platform at once.</h1>
+          <p class="hero-lead">
+            One search pulls from tens of thousands of real fundraisers. No accounts, no fees — you give on the site they already trust.
+          </p>
+          <div class="hero-stat-pills" id="statsBar" aria-live="polite">
+            <div class="stat-pill" data-metric="" data-display="">
+              <span class="stat-pill-value metric-value" id="heroStatCampaigns">—</span>
+              <span class="stat-pill-label">Campaigns</span>
+            </div>
+            <div class="stat-pill" data-metric="" data-display="">
+              <span class="stat-pill-value metric-value" id="heroStatRaised">—</span>
+              <span class="stat-pill-label">Raised tracked</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-pill-value metric-value" id="platformCount">—</span>
+              <span class="stat-pill-label">Platforms</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-search-card" data-reveal>
+          <p class="hero-search-kicker">Search now</p>
+          <p class="hero-search-hint">Index of <strong id="feedIndexCount">—</strong> fundraisers + live GoFundMe</p>
+          <div class="search-panel">
+            <div class="search-panel-inner">
+              <input id="searchInput" class="search-input" type="search" placeholder="cancer, Palestine, medical bills…" aria-label="Search campaigns" autocomplete="off">
+              <button type="button" class="btn-search" id="searchBtn">Search</button>
+            </div>
+          </div>
+          <button type="button" class="btn-expand-search hidden" id="expandSearchBtn" title="Also query other crowdfunding sites (slower)">+ Search more platforms</button>
+          <p id="searchStatus" class="hero-search-status" aria-live="polite"></p>
         </div>
       </div>
     </header>
@@ -1013,58 +1039,43 @@
       <div class="marquee-inner" id="marqueeA"></div>
     </section>
 
-    <section class="capabilities" aria-label="Core capabilities">
-      <article class="cap-card" data-reveal data-reveal-delay="1">
-        <span class="cap-icon" aria-hidden="true">⌕</span>
-        <h3>One search</h3>
-        <p>Search our index and GoFundMe live; add more sites when you need broader coverage.</p>
-      </article>
-      <article class="cap-card" data-reveal data-reveal-delay="2">
-        <span class="cap-icon" aria-hidden="true">◎</span>
-        <h3>Most needed first</h3>
-        <p>Sort by funding gap or campaigns almost at goal. Spend your attention where it changes outcomes.</p>
-      </article>
-      <article class="cap-card" data-reveal data-reveal-delay="3">
-        <span class="cap-icon" aria-hidden="true">↗</span>
-        <h3>Give on their platform</h3>
-        <p>No middleman fees. Every card links straight to the original fundraiser so donors land where trust already lives.</p>
-      </article>
-    </section>
-
-    <section id="statsBar" class="metrics" aria-live="polite" data-reveal>
-      <div class="metric" data-reveal data-reveal-delay="1" data-metric="" data-display="">
-        <span class="metric-value">—</span>
-        <span class="metric-label">Campaigns indexed</span>
+    <section id="how" class="bento" aria-label="How it works">
+      <div class="bento-intro" data-reveal>
+        <p class="section-eyebrow">How it works</p>
+        <h2>Discovery built for donors, not platforms.</h2>
       </div>
-      <div class="metric" data-reveal data-reveal-delay="2" data-metric="" data-display="">
-        <span class="metric-value">—</span>
-        <span class="metric-label">Total raised tracked</span>
-      </div>
-      <div class="metric" data-reveal data-reveal-delay="3">
-        <span class="metric-value" id="platformCount">—</span>
-        <span class="metric-label">Platforms in index</span>
+      <div class="bento-grid">
+        <article class="bento-cell bento-feature" data-reveal>
+          <span class="cap-icon" aria-hidden="true">⌕</span>
+          <h3>One search, every source</h3>
+          <p>Query our full index and GoFundMe live in seconds. Expand to more platforms when you need broader coverage.</p>
+          <a class="bento-link" href="#campaigns">Start searching →</a>
+        </article>
+        <article class="bento-cell" data-reveal data-reveal-delay="1">
+          <span class="cap-icon" aria-hidden="true">◎</span>
+          <h3>Most needed first</h3>
+          <p>Sort by funding gap or almost at goal — put attention where it changes outcomes.</p>
+        </article>
+        <article class="bento-cell" data-reveal data-reveal-delay="2">
+          <span class="cap-icon" aria-hidden="true">↗</span>
+          <h3>Give on their platform</h3>
+          <p>No middleman. Every card opens the official fundraiser — trust stays where it belongs.</p>
+        </article>
       </div>
     </section>
 
-    <section id="campaigns" class="feed-section" data-reveal>
-      <div class="feed-header">
-        <h2>Search campaigns</h2>
-        <p>Type a cause, name, or place — we search our index of <strong id="feedIndexCount">—</strong> fundraisers first, then GoFundMe live.</p>
-        <div class="search-panel">
-          <div class="search-panel-inner">
-            <input id="searchInput" class="search-input" type="search" placeholder="e.g. cancer, Palestine, medical bills…" aria-label="Search campaigns" autocomplete="off">
-            <button type="button" class="btn-search" id="searchBtn">Search</button>
-            <button type="button" class="btn-expand-search hidden" id="expandSearchBtn" title="Also query other crowdfunding sites (slower)">+ More sites</button>
-          </div>
+    <section id="campaigns" class="discover" data-reveal>
+      <header class="discover-head">
+        <div class="discover-head-text">
+          <p class="section-eyebrow">Discover</p>
+          <h2>Live fundraisers</h2>
+          <p id="resultsMeta" class="results-meta"></p>
         </div>
-        <p id="searchStatus" aria-live="polite"></p>
-        <div id="searchPlatformProgress" class="platform-progress hidden" aria-label="Search progress by platform"></div>
-        <p id="resultsMeta" class="results-meta"></p>
         <p id="liveStatus" class="live-status" aria-live="polite">
           <span class="live-dot" id="liveDot" aria-hidden="true"></span>
           <span id="liveStatusText">Connecting to live index…</span>
         </p>
-      </div>
+      </header>
 
       <div id="mockBanner" class="banner hidden">
         Showing sample campaigns — start the API at localhost:8000 for live data.
@@ -1072,92 +1083,119 @@
       <div id="liveSearchBanner" class="banner hidden" role="status">
         Live search across platforms — results pulled on demand for your query.
       </div>
+      <div id="searchPlatformProgress" class="platform-progress hidden" aria-label="Search progress by platform"></div>
 
-      <div class="toolbar">
-        <span class="toolbar-label">Category</span>
-        <div class="pills" role="group" aria-label="Category filters">
-          <button class="pill" type="button" data-category="" aria-pressed="true">All</button>
-          <button class="pill" type="button" data-category="medical" aria-pressed="false">Medical</button>
-          <button class="pill" type="button" data-category="education" aria-pressed="false">Education</button>
-          <button class="pill" type="button" data-category="emergency" aria-pressed="false">Emergency</button>
-          <button class="pill" type="button" data-category="community" aria-pressed="false">Community</button>
-        </div>
-        <div class="filters-right">
-          <div class="select-wrap">
-            <select id="sortSelect" aria-label="Sort campaigns">
-              <option value="most_needed">Most needed</option>
-              <option value="almost_there">Almost there</option>
-              <option value="newest">Newest</option>
-            </select>
+      <div class="discover-body">
+        <aside class="discover-sidebar" aria-label="Filters">
+          <div class="sidebar-card">
+            <h3 class="sidebar-title">Refine</h3>
+            <p class="sidebar-label">Category</p>
+            <div class="pills pills-stack" role="group" aria-label="Category filters">
+              <button class="pill" type="button" data-category="" aria-pressed="true">All</button>
+              <button class="pill" type="button" data-category="medical" aria-pressed="false">Medical</button>
+              <button class="pill" type="button" data-category="education" aria-pressed="false">Education</button>
+              <button class="pill" type="button" data-category="emergency" aria-pressed="false">Emergency</button>
+              <button class="pill" type="button" data-category="community" aria-pressed="false">Community</button>
+            </div>
+            <p class="sidebar-label">Sort</p>
+            <div class="select-wrap select-full">
+              <select id="sortSelect" aria-label="Sort campaigns">
+                <option value="most_needed">Most needed</option>
+                <option value="almost_there">Almost there</option>
+                <option value="newest">Newest</option>
+              </select>
+            </div>
+            <p class="sidebar-label">Platform</p>
+            <div class="select-wrap select-full">
+              <select id="platformSelect" aria-label="Filter by platform">
+                <option value="">All platforms</option>
+              </select>
+            </div>
+            <p class="sidebar-foot"><span id="heroPlatformLink">40+</span> sources in catalog</p>
           </div>
-          <div class="select-wrap">
-            <select id="platformSelect" aria-label="Filter by platform">
-              <option value="">All platforms</option>
-            </select>
-          </div>
-        </div>
-      </div>
+        </aside>
 
-      <div id="campaignGrid" class="feed"></div>
-      <div id="emptyState" class="empty hidden">
-        No campaigns match. Try a shorter keyword, clear filters, or search “medical” / “emergency”.
-      </div>
-      <div class="load-more-wrap">
-        <button type="button" class="btn-load-more hidden" id="loadMoreBtn">Load more campaigns</button>
+        <main class="discover-main">
+          <div id="campaignGrid" class="campaign-masonry feed"></div>
+          <div id="emptyState" class="empty hidden">
+            No campaigns match. Try a shorter keyword, clear filters, or search “medical” / “emergency”.
+          </div>
+          <div class="load-more-wrap">
+            <button type="button" class="btn-load-more hidden" id="loadMoreBtn">Load more campaigns</button>
+          </div>
+        </main>
       </div>
     </section>
 
-    <section id="wallet" class="wallet-band" aria-labelledby="walletTitle" data-reveal>
-      <h2 id="walletTitle">Save your card <em>(optional)</em></h2>
-      <p>
-        Free service — we never charge you. Sign in with Google, save a card via Stripe Link, and we prefill your details
-        on supported platforms. GiveFund cannot apply your card on GoFundMe or LaunchGood; you still complete payment on their site.
-      </p>
-      <p><a class="btn-primary" href="wallet.html" style="display:inline-block;text-decoration:none;margin-top:8px">Set up wallet →</a></p>
-      <div id="walletUnconfigured" class="wallet-note hidden">
-        Card save is off until <code>STRIPE_SECRET_KEY</code> is set on the API.
+    <section id="wallet" class="wallet-split" aria-labelledby="walletTitle" data-reveal>
+      <div class="wallet-split-copy">
+        <p class="section-eyebrow">Optional</p>
+        <h2 id="walletTitle">Save your card for faster checkout</h2>
+        <p>
+          Free — we never charge you. Google sign-in + Stripe Link prefill on supported sites.
+          You still complete payment on GoFundMe, LaunchGood, and others.
+        </p>
+        <div id="walletUnconfigured" class="wallet-note hidden">
+          Card save is off until Stripe keys are set on the API.
+        </div>
+        <p id="walletStatus" class="wallet-note hidden" role="status"></p>
       </div>
-      <p id="walletStatus" class="wallet-note hidden" role="status"></p>
+      <div class="wallet-split-action">
+        <a class="btn-primary wallet-cta" href="wallet.html">Set up wallet →</a>
+      </div>
     </section>
 
     <section class="cta-band" data-reveal>
-      <h2>Discovery that stays <em>free</em></h2>
-      <p>No accounts, no fees, no donations to us. GiveFund is a public index — you give where the campaign already lives.</p>
-      <a class="btn-primary" href="#campaigns">Browse campaigns</a>
+      <div class="cta-band-inner">
+        <h2>Discovery that stays <em>free</em></h2>
+        <p>No accounts, no fees, no donations to us — you give where the campaign already lives.</p>
+        <a class="btn-primary" href="#campaigns">Browse campaigns</a>
+      </div>
     </section>
 
-    <section id="faq" class="faq" data-reveal>
-      <h2>What is GiveFund?</h2>
-      <div class="faq-item">
-        <strong>Why does this exist?</strong>
-        <p>Most donors only see campaigns in one app or one feed. GiveFund aggregates public listings so you can find people to help before the moment passes.</p>
+    <section id="faq" class="faq-grid" data-reveal>
+      <div class="faq-intro">
+        <p class="section-eyebrow">FAQ</p>
+        <h2>Questions donors ask</h2>
       </div>
-      <div class="faq-item">
-        <strong>Which platforms do you support?</strong>
-        <p id="faqPlatforms">Twelve sources including GoFundMe, LaunchGood, JustGiving, Givebutter, GlobalGiving, Patreon, and more — with new discover scrapers added over time.</p>
-      </div>
-      <div class="faq-item">
-        <strong>Do you handle campaign payments?</strong>
-        <p>No. “Give now” always opens the original fundraiser on their platform. GiveFund never holds or routes money for campaigns — and we never ask for tips or donations to GiveFund.</p>
-      </div>
-      <div class="faq-item">
-        <strong>Is GiveFund really free?</strong>
-        <p>Yes. There are no accounts, no paywalls, and no payments to us. We’re a discovery layer; your gift goes entirely through the platform hosting the fundraiser.</p>
-      </div>
-      <div class="faq-item">
-        <strong>Can GiveFund pay with my saved card?</strong>
-        <p>No. We can’t pass payment tokens to GoFundMe, LaunchGood, or other hosts. Optional card save is only for Stripe Link on sites that support it — you always finish checkout on the original platform.</p>
+      <div class="faq-list">
+        <details class="faq-details" open>
+          <summary>Why does GiveFund exist?</summary>
+          <p>Most donors only see campaigns in one app or one feed. We aggregate public listings so you can find people to help before the moment passes.</p>
+        </details>
+        <details class="faq-details">
+          <summary>Which platforms do you support?</summary>
+          <p id="faqPlatforms">GoFundMe, LaunchGood, JustGiving, Givebutter, GlobalGiving, and more — with new sources added over time.</p>
+        </details>
+        <details class="faq-details">
+          <summary>Do you handle campaign payments?</summary>
+          <p>No. “Give now” always opens the original fundraiser. GiveFund never holds or routes money for campaigns.</p>
+        </details>
+        <details class="faq-details">
+          <summary>Is it really free?</summary>
+          <p>Yes. No accounts, no paywalls, no payments to us. Your gift goes entirely through the platform hosting the fundraiser.</p>
+        </details>
+        <details class="faq-details">
+          <summary>Can you pay with my saved card?</summary>
+          <p>We can’t pass payment tokens to GoFundMe or LaunchGood. Optional card save only helps Stripe Link on sites that support it.</p>
+        </details>
       </div>
     </section>
 
     <footer class="footer">
-      <div class="logo">GiveFund</div>
-      <p>Free public crowdfunding discovery — no accounts, no fees, no donations to GiveFund.</p>
-      <p style="margin-top:8px;font-size:13px">
-        <a href="wallet.html" style="color:inherit;opacity:.7;text-decoration:none;margin-right:16px">Wallet</a>
-        <a href="privacy.html" style="color:inherit;opacity:.7;text-decoration:none;margin-right:16px">Privacy</a>
-        <a href="terms.html" style="color:inherit;opacity:.7;text-decoration:none">Terms</a>
-      </p>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="logo">GiveFund</span>
+          <p>Free public crowdfunding discovery.</p>
+        </div>
+        <div class="footer-links">
+          <a href="#campaigns">Discover</a>
+          <a href="wallet.html">Wallet</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="terms.html">Terms</a>
+        </div>
+      </div>
+      <p class="footer-copy">No accounts · No fees · No donations to GiveFund</p>
     </footer>
   </div>
 
@@ -1591,16 +1629,15 @@
     }
 
     function renderSkeletons() {
-      const html = Array.from({ length: 4 }, () => `
-        <div class="skeleton-card">
-          <div class="skeleton-media"></div>
-          <div class="skeleton-body">
+      const html = Array.from({ length: 6 }, () => `
+        <article class="signal-card skeleton-card">
+          <div class="card-media skeleton-media"></div>
+          <div class="card-body skeleton-body">
             <div class="skeleton-line w40"></div>
             <div class="skeleton-line w85"></div>
-            <div class="skeleton-line"></div>
             <div class="skeleton-line w60"></div>
           </div>
-        </div>
+        </article>
       `).join("");
       $("#campaignGrid").innerHTML = html;
       $("#emptyState").classList.add("hidden");
@@ -1613,35 +1650,35 @@
       const plat = platformLabel(c.platform);
       const donateUrl = buildDonateUrl(c);
       return `
-        <article class="signal-card" data-reveal>
-          <div class="signal-media">
+        <article class="signal-card campaign-card" data-reveal>
+          <div class="card-media signal-media">
             <img src="${escapeHtml(photo)}" alt="" loading="lazy">
+            <div class="card-media-overlay">
+              <span class="card-badge card-badge-platform">${escapeHtml(plat)}</span>
+              <span class="card-badge card-badge-pct">${Math.round(pct)}% funded</span>
+            </div>
           </div>
-          <div class="signal-body">
-            <div class="signal-top">
+          <div class="card-body signal-body">
+            <div class="card-meta signal-top">
               <span class="signal-label">${escapeHtml(categoryLabel(c.category))}</span>
-              <span class="tag tag-platform">${escapeHtml(plat)}</span>
               ${location}
             </div>
-            <h2 class="signal-title">${escapeHtml(c.title)}</h2>
-            <p class="signal-story story-snippet">${escapeHtml(formatStorySnippet(c.story_snippet))}</p>
-            <div class="signal-footer">
-              <div class="funding-meta">
-                <div class="progress-track" aria-hidden="true">
-                  <div class="progress-fill" style="width:${pct}%;opacity:${progressOpacity(pct)}"></div>
-                </div>
+            <h2 class="signal-title card-title">${escapeHtml(c.title)}</h2>
+            <p class="signal-story story-snippet card-story">${escapeHtml(formatStorySnippet(c.story_snippet))}</p>
+            <div class="card-progress signal-footer">
+              <div class="progress-track" aria-hidden="true">
+                <div class="progress-fill" style="width:${pct}%;opacity:${progressOpacity(pct)}"></div>
+              </div>
+              <div class="card-progress-row">
                 <p class="funding-text">
-                  <strong>${formatMoney(c.raised_amount)}</strong> raised of ${formatMoney(c.goal_amount)}
-                  · ${Math.round(pct)}% funded
+                  <strong>${formatMoney(c.raised_amount)}</strong>
+                  <span class="funding-of">of ${formatMoney(c.goal_amount)}</span>
                 </p>
-              </div>
-              <div class="donate-wrap">
-                <a class="cta-button" href="give.html?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener noreferrer">
-                  Give now →
+                <a class="cta-button card-cta" href="give.html?id=${encodeURIComponent(c.id)}" target="_blank" rel="noopener noreferrer">
+                  Give now
                 </a>
-                <p class="donate-hint">Completes on ${escapeHtml(plat)}</p>
-                ${c.scraped_at ? `<p class="card-updated">Indexed ${escapeHtml(formatRelativeTime(c.scraped_at))}</p>` : ""}
               </div>
+              ${c.scraped_at ? `<p class="card-updated">Indexed ${escapeHtml(formatRelativeTime(c.scraped_at))}</p>` : ""}
             </div>
           </div>
         </article>
@@ -1661,8 +1698,7 @@
     }
 
     async function fetchStats() {
-      const metricBlocks = $("#statsBar").querySelectorAll(".metric");
-      const metrics = $("#statsBar").querySelectorAll(".metric-value");
+      const metricBlocks = $("#statsBar")?.querySelectorAll(".stat-pill") || [];
       try {
         const res = await fetch(`${API_URL}/stats`);
         if (!res.ok) throw new Error("stats failed");
@@ -1670,31 +1706,41 @@
         state.stats = data;
         const campaignsDisplay = data.total_campaigns.toLocaleString();
         const raisedDisplay = formatMoney(data.total_raised);
-        metricBlocks[0].dataset.metric = String(data.total_campaigns);
-        metricBlocks[0].dataset.display = campaignsDisplay;
-        metricBlocks[1].dataset.metric = String(Math.round(data.total_raised));
-        metricBlocks[1].dataset.display = raisedDisplay;
-        metrics[0].textContent = campaignsDisplay;
-        metrics[1].textContent = raisedDisplay;
+        if (metricBlocks[0]) {
+          metricBlocks[0].dataset.metric = String(data.total_campaigns);
+          metricBlocks[0].dataset.display = campaignsDisplay;
+        }
+        if (metricBlocks[1]) {
+          metricBlocks[1].dataset.metric = String(Math.round(data.total_raised));
+          metricBlocks[1].dataset.display = raisedDisplay;
+        }
+        const elCampaigns = $("#heroStatCampaigns");
+        const elRaised = $("#heroStatRaised");
+        if (elCampaigns) elCampaigns.textContent = campaignsDisplay;
+        if (elRaised) elRaised.textContent = raisedDisplay;
         const inIndex = data.platforms_indexed ?? data.platforms?.length ?? 0;
         const supported = data.platforms_supported ?? state.catalog.length;
         const platDisplay = `${inIndex} / ${supported}`;
-        metrics[2].textContent = platDisplay;
-        $("#platformCount").textContent = platDisplay;
+        const elPlat = $("#platformCount");
+        if (elPlat) elPlat.textContent = platDisplay;
         $("#feedIndexCount").textContent = campaignsDisplay;
-        $("#heroPlatformLink").textContent = `${supported}+ platforms`;
+        const heroPlat = $("#heroPlatformLink");
+        if (heroPlat) heroPlat.textContent = `${supported}+ platforms`;
         const badge = document.querySelector(".hero-badge");
         if (badge) {
-          badge.innerHTML = `<span class="hero-badge-dot" aria-hidden="true"></span> Live index · ${campaignsDisplay} campaigns`;
+          badge.innerHTML = `<span class="hero-badge-dot" aria-hidden="true"></span> Live · ${campaignsDisplay} campaigns`;
         }
         if (window.GiveFundMotion?.initMetricCounters) {
           window.GiveFundMotion.initMetricCounters();
         }
       } catch {
         const total = MOCK_CAMPAIGNS.reduce((s, c) => s + (c.raised_amount || 0), 0);
-        metrics[0].textContent = String(MOCK_CAMPAIGNS.length);
-        metrics[1].textContent = formatMoney(total);
-        metrics[2].textContent = "12";
+        const elCampaigns = $("#heroStatCampaigns");
+        const elRaised = $("#heroStatRaised");
+        if (elCampaigns) elCampaigns.textContent = String(MOCK_CAMPAIGNS.length);
+        if (elRaised) elRaised.textContent = formatMoney(total);
+        const elPlat = $("#platformCount");
+        if (elPlat) elPlat.textContent = "12";
         $("#feedIndexCount").textContent = "sample";
       }
     }
