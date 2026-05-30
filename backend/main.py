@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponseh
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import db
@@ -156,7 +156,7 @@ async def search_fast(
     merged: dict[str, Campaign] = {}
     if merge_db:
         db_rows, total_db, _ = await db.get_campaigns(
-            search=q, page=1, page_size=limit, sort_by="most_needed"
+            search=q, category=None, platform=None, page=1, page_size=limit, sort_by="most_needed"
         )
         for c in db_rows:
             merged[c.campaign_url] = c
