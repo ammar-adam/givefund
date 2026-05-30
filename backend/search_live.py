@@ -11,7 +11,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 SCRAPER_DIR = Path(__file__).resolve().parents[1] / "scraper"
-LIVE_SEARCH_TIMEOUT_SEC = int(os.getenv("LIVE_SEARCH_TIMEOUT_SEC", "90"))
+LIVE_SEARCH_TIMEOUT_SEC = int(os.getenv("LIVE_SEARCH_TIMEOUT_SEC", "45"))
 
 
 def _import_scraper() -> None:

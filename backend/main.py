@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 import db
@@ -41,6 +41,7 @@ from search_bridge import run_live_search_subprocess
 from search_fast import run_fast_search
 from search_live import run_live_search as run_live_search_inprocess
 from search_cache import get_cached, set_cached
+from search_stream import stream_live_search_events
 import donor_db
 import google_oauth
 import stripe_wallet
@@ -256,8 +257,52 @@ async def search_live(
         live_count=len(live_rows),
         cached_count=max(0, len(campaigns) - len(live_rows)),
         by_platform=by_platform,
-        persisted=raw.get("saved"),
+        persisted=raw.get("saved") or raw.get("persist_queued"),
         error=raw.get("error"),
+    )
+
+
+@app.get("/search/live/stream")
+async def search_live_stream(
+    q: str = Query(min_length=2, max_length=120),
+    limit: int = Query(default=80, ge=5, le=100),
+    persist: bool = Query(default=True),
+    platform: str | None = Query(default=None, max_length=40),
+) -> StreamingResponse:
+    """
+    Server-Sent Events: campaigns arrive per platform as they finish (often < 10s to first batch).
+    """
+    platforms = [platform] if platform else None
+
+    async def event_generator():
+        merged_cache: dict[str, Any] = {"campaigns": [], "by_platform": {}}
+        async for chunk in stream_live_search_events(
+            q, limit=limit, platforms=platforms, persist=persist
+        ):
+            yield chunk
+            if chunk.startswith("data: "):
+                try:
+                    import json as _json
+
+                    payload = _json.loads(chunk[6:].strip())
+                    if payload.get("type") == "platform":
+                        merged_cache["campaigns"].extend(payload.get("campaigns") or [])
+                        merged_cache["by_platform"][payload["platform"]] = payload.get(
+                            "count", 0
+                        )
+                    elif payload.get("type") == "done":
+                        set_cached(q, payload, platform=platform)
+                except Exception:
+                    pass
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
     )
 
 

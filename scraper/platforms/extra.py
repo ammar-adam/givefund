@@ -58,6 +58,7 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://www.mchanga.africa",
         start_urls=("https://www.mchanga.africa/", "https://www.mchanga.africa/explore"),
         link_markers=("/fundraiser/", "/campaign/", "/f/"),
+        search_url_template="https://www.mchanga.africa/search?q={query}",
         max_campaigns=35,
     ),
     DiscoverConfig(
@@ -65,6 +66,7 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://give.asia",
         start_urls=("https://give.asia/explore", "https://give.asia/campaigns"),
         link_markers=("/campaign/", "/project/"),
+        search_url_template="https://give.asia/search?query={query}",
         max_campaigns=30,
     ),
     DiscoverConfig(
@@ -72,6 +74,7 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://www.thundafund.com",
         start_urls=("https://www.thundafund.com/explore", "https://www.thundafund.com/"),
         link_markers=("/project/", "/campaign/"),
+        search_url_template="https://www.thundafund.com/search?q={query}",
         max_campaigns=25,
     ),
     DiscoverConfig(
@@ -79,12 +82,14 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://donorbox.org",
         start_urls=("https://donorbox.org/",),
         link_markers=("/campaign/",),
+        search_url_template="https://donorbox.org/search?q={query}",
     ),
     DiscoverConfig(
         platform="patreon",
         base_url="https://www.patreon.com",
         start_urls=("https://www.patreon.com/discover",),
         link_markers=("/c/", "/user/"),
+        search_url_template="https://www.patreon.com/search?q={query}",
         max_campaigns=20,
     ),
     DiscoverConfig(
@@ -120,6 +125,7 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://www.leetchi.com",
         start_urls=("https://www.leetchi.com/en/collection", "https://www.leetchi.com/en/collections"),
         link_markers=("/c/", "/pot/"),
+        search_url_template="https://www.leetchi.com/en/c/search?search={query}",
         max_campaigns=30,
     ),
     DiscoverConfig(
@@ -149,6 +155,7 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://liberapay.com",
         start_urls=("https://liberapay.com/explore/public",),
         link_markers=("/liberapay.com/", "/~"),
+        search_url_template="https://liberapay.com/search?query={query}",
         max_campaigns=30,
     ),
     DiscoverConfig(
@@ -219,6 +226,7 @@ EXTRA_CONFIGS: list[DiscoverConfig] = [
         base_url="https://www.rally.org",
         start_urls=("https://www.rally.org/fundraisers",),
         link_markers=("/f/", "/fundraiser/"),
+        search_url_template="https://www.rally.org/search?q={query}",
         max_campaigns=25,
     ),
     DiscoverConfig(

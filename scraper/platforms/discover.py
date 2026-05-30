@@ -70,6 +70,76 @@ def _normalize_url(href: str, base_url: str) -> Optional[str]:
     return full.split("?")[0].split("#")[0]
 
 
+def extract_hrefs_from_html(html: str, config: DiscoverConfig) -> set[str]:
+    """Parse campaign links from raw HTML (no JavaScript)."""
+    hrefs: set[str] = set()
+    for marker in config.link_markers:
+        pattern = rf'href="([^"]*{re.escape(marker)}[^"]*)"'
+        for match in re.findall(pattern, html, re.I):
+            norm = _normalize_url(match, config.base_url)
+            if norm:
+                hrefs.add(norm)
+        pattern2 = rf"href='([^']*{re.escape(marker)}[^']*)'"
+        for match in re.findall(pattern2, html, re.I):
+            norm = _normalize_url(match, config.base_url)
+            if norm:
+                hrefs.add(norm)
+    return hrefs
+
+
+async def scrape_search_http(
+    config: DiscoverConfig,
+    query: str,
+    *,
+    client=None,
+    limit: int | None = None,
+) -> list[dict]:
+    """
+    Fast search via HTTP GET + HTML link harvest (~1–4s per platform).
+    Works on many sites without Playwright; JS-heavy sites may return [].
+    """
+    if not config.search_url_template or not query.strip():
+        return []
+
+    import httpx
+
+    search_url = config.search_url_template.format(query=quote_plus(query.strip()))
+    cap = limit or min(config.max_campaigns, 20)
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+    own_client = client is None
+    if own_client:
+        client = httpx.AsyncClient(
+            follow_redirects=True,
+            timeout=httpx.Timeout(8.0, connect=5.0),
+            headers=headers,
+        )
+
+    campaigns: list[dict] = []
+    try:
+        resp = await client.get(search_url)
+        if resp.status_code >= 400:
+            logger.warning("[%s] HTTP %s for %r", config.platform, resp.status_code, query)
+            return []
+        hrefs = extract_hrefs_from_html(resp.text, config)
+        for url in list(hrefs)[:cap]:
+            campaigns.append(_campaign_from_url(url, config.platform))
+        logger.info("[%s] HTTP search %r -> %d", config.platform, query, len(campaigns))
+    except Exception as exc:
+        logger.debug("[%s] HTTP search failed %r: %s", config.platform, query, exc)
+    finally:
+        if own_client:
+            await client.aclose()
+
+    return campaigns
+
+
 async def _extract_from_link(
     page,
     url: str,
