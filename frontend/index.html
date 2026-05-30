@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/motion.css">
   <style>
     :root {
       --bg: #F7F3ED;
@@ -18,6 +19,7 @@
       --border-soft: #EDE8E1;
       --accent: #E8533A;
       --accent-hover: #D44530;
+      --accent-soft: rgba(232, 83, 58, 0.12);
       --pill-bg: #EDE8E1;
       --pill-selected: #1C1917;
       --btn-dark: #1C1917;
@@ -985,8 +987,15 @@
     </nav>
 
     <header class="hero">
+      <div class="hero-aurora" aria-hidden="true">
+        <span class="orb orb-a"></span>
+        <span class="orb orb-b"></span>
+        <span class="orb orb-c"></span>
+      </div>
+      <div class="hero-grain" aria-hidden="true"></div>
       <div class="hero-bg" aria-hidden="true"></div>
       <div class="hero-inner">
+        <p class="hero-badge"><span class="hero-badge-dot" aria-hidden="true"></span> Live index · 34k+ campaigns</p>
         <h1><em>Find the help</em> someone needs — in one searchable place.</h1>
         <p class="hero-lead">
           Search our indexed fundraisers plus live GoFundMe results. Optional “+ More sites” tries other platforms when they allow it — always free, no middleman fees.
@@ -998,49 +1007,54 @@
       </div>
     </header>
 
-    <section id="platforms" class="marquee-section" aria-label="Supported platforms">
+    <section id="platforms" class="marquee-section" aria-label="Supported platforms" data-reveal>
       <p class="marquee-label">Indexed from</p>
       <div class="marquee-inner" id="marqueeA"></div>
     </section>
 
     <section class="capabilities" aria-label="Core capabilities">
-      <article class="cap-card">
+      <article class="cap-card" data-reveal data-reveal-delay="1">
+        <span class="cap-icon" aria-hidden="true">⌕</span>
         <h3>One search</h3>
         <p>Search our index and GoFundMe live; add more sites when you need broader coverage.</p>
       </article>
-      <article class="cap-card">
+      <article class="cap-card" data-reveal data-reveal-delay="2">
+        <span class="cap-icon" aria-hidden="true">◎</span>
         <h3>Most needed first</h3>
         <p>Sort by funding gap or campaigns almost at goal. Spend your attention where it changes outcomes.</p>
       </article>
-      <article class="cap-card">
+      <article class="cap-card" data-reveal data-reveal-delay="3">
+        <span class="cap-icon" aria-hidden="true">↗</span>
         <h3>Give on their platform</h3>
         <p>No middleman fees. Every card links straight to the original fundraiser so donors land where trust already lives.</p>
       </article>
     </section>
 
-    <section id="statsBar" class="metrics" aria-live="polite">
-      <div class="metric">
+    <section id="statsBar" class="metrics" aria-live="polite" data-reveal>
+      <div class="metric" data-reveal data-reveal-delay="1" data-metric="" data-display="">
         <span class="metric-value">—</span>
         <span class="metric-label">Campaigns indexed</span>
       </div>
-      <div class="metric">
+      <div class="metric" data-reveal data-reveal-delay="2" data-metric="" data-display="">
         <span class="metric-value">—</span>
         <span class="metric-label">Total raised tracked</span>
       </div>
-      <div class="metric">
+      <div class="metric" data-reveal data-reveal-delay="3">
         <span class="metric-value" id="platformCount">—</span>
         <span class="metric-label">Platforms in index</span>
       </div>
     </section>
 
-    <section id="campaigns" class="feed-section">
+    <section id="campaigns" class="feed-section" data-reveal>
       <div class="feed-header">
         <h2>Search campaigns</h2>
         <p>Type a cause, name, or place — we search our index of <strong id="feedIndexCount">—</strong> fundraisers first, then GoFundMe live.</p>
         <div class="search-panel">
-          <input id="searchInput" class="search-input" type="search" placeholder="e.g. cancer, Palestine, medical bills…" aria-label="Search campaigns" autocomplete="off">
-          <button type="button" class="btn-search" id="searchBtn">Search</button>
-          <button type="button" class="btn-expand-search hidden" id="expandSearchBtn" title="Also query other crowdfunding sites (slower)">+ More sites</button>
+          <div class="search-panel-inner">
+            <input id="searchInput" class="search-input" type="search" placeholder="e.g. cancer, Palestine, medical bills…" aria-label="Search campaigns" autocomplete="off">
+            <button type="button" class="btn-search" id="searchBtn">Search</button>
+            <button type="button" class="btn-expand-search hidden" id="expandSearchBtn" title="Also query other crowdfunding sites (slower)">+ More sites</button>
+          </div>
         </div>
         <p id="searchStatus" aria-live="polite"></p>
         <div id="searchPlatformProgress" class="platform-progress hidden" aria-label="Search progress by platform"></div>
@@ -1092,7 +1106,7 @@
       </div>
     </section>
 
-    <section id="wallet" class="wallet-band" aria-labelledby="walletTitle">
+    <section id="wallet" class="wallet-band" aria-labelledby="walletTitle" data-reveal>
       <h2 id="walletTitle">Save your card <em>(optional)</em></h2>
       <p>
         Free service — we never charge you. Sign in with Google, save a card via Stripe Link, and we prefill your details
@@ -1105,13 +1119,13 @@
       <p id="walletStatus" class="wallet-note hidden" role="status"></p>
     </section>
 
-    <section class="cta-band">
+    <section class="cta-band" data-reveal>
       <h2>Discovery that stays <em>free</em></h2>
       <p>No accounts, no fees, no donations to us. GiveFund is a public index — you give where the campaign already lives.</p>
       <a class="btn-primary" href="#campaigns">Browse campaigns</a>
     </section>
 
-    <section id="faq" class="faq">
+    <section id="faq" class="faq" data-reveal>
       <h2>What is GiveFund?</h2>
       <div class="faq-item">
         <strong>Why does this exist?</strong>
@@ -1147,6 +1161,7 @@
   </div>
 
   <script src="config.js"></script>
+  <script src="js/motion.js" defer></script>
   <script>
     const API_URL = window.GIVEFUND_API_URL || "http://localhost:8000";
 
@@ -1596,7 +1611,7 @@
       const plat = platformLabel(c.platform);
       const donateUrl = buildDonateUrl(c);
       return `
-        <article class="signal-card">
+        <article class="signal-card" data-reveal>
           <div class="signal-media">
             <img src="${escapeHtml(photo)}" alt="" loading="lazy">
           </div>
@@ -1644,20 +1659,35 @@
     }
 
     async function fetchStats() {
+      const metricBlocks = $("#statsBar").querySelectorAll(".metric");
       const metrics = $("#statsBar").querySelectorAll(".metric-value");
       try {
         const res = await fetch(`${API_URL}/stats`);
         if (!res.ok) throw new Error("stats failed");
         const data = await res.json();
         state.stats = data;
-        metrics[0].textContent = data.total_campaigns.toLocaleString();
-        metrics[1].textContent = formatMoney(data.total_raised);
+        const campaignsDisplay = data.total_campaigns.toLocaleString();
+        const raisedDisplay = formatMoney(data.total_raised);
+        metricBlocks[0].dataset.metric = String(data.total_campaigns);
+        metricBlocks[0].dataset.display = campaignsDisplay;
+        metricBlocks[1].dataset.metric = String(Math.round(data.total_raised));
+        metricBlocks[1].dataset.display = raisedDisplay;
+        metrics[0].textContent = campaignsDisplay;
+        metrics[1].textContent = raisedDisplay;
         const inIndex = data.platforms_indexed ?? data.platforms?.length ?? 0;
         const supported = data.platforms_supported ?? state.catalog.length;
-        metrics[2].textContent = `${inIndex} / ${supported}`;
-        $("#platformCount").textContent = `${inIndex} / ${supported}`;
-        $("#feedIndexCount").textContent = data.total_campaigns.toLocaleString();
+        const platDisplay = `${inIndex} / ${supported}`;
+        metrics[2].textContent = platDisplay;
+        $("#platformCount").textContent = platDisplay;
+        $("#feedIndexCount").textContent = campaignsDisplay;
         $("#heroPlatformLink").textContent = `${supported}+ platforms`;
+        const badge = document.querySelector(".hero-badge");
+        if (badge) {
+          badge.innerHTML = `<span class="hero-badge-dot" aria-hidden="true"></span> Live index · ${campaignsDisplay} campaigns`;
+        }
+        if (window.GiveFundMotion?.initMetricCounters) {
+          window.GiveFundMotion.initMetricCounters();
+        }
       } catch {
         const total = MOCK_CAMPAIGNS.reduce((s, c) => s + (c.raised_amount || 0), 0);
         metrics[0].textContent = String(MOCK_CAMPAIGNS.length);

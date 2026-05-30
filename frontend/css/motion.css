@@ -1,0 +1,524 @@
+/**
+ * GiveFund motion layer — Godly / React Bits–inspired effects (vanilla CSS).
+ * Respects prefers-reduced-motion.
+ */
+
+:root {
+  --accent-soft: rgba(232, 83, 58, 0.12);
+  --glow: rgba(232, 83, 58, 0.35);
+  --glass: rgba(255, 255, 255, 0.72);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Animated mesh hero (Unicorn / Spline vibe) ── */
+.hero {
+  padding: 110px 40px 72px;
+}
+
+.hero-aurora {
+  position: absolute;
+  inset: -20% -10%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  filter: blur(60px);
+  opacity: 0.85;
+}
+
+.hero-aurora .orb {
+  position: absolute;
+  border-radius: 50%;
+  animation: orb-float 18s var(--ease-out-expo) infinite alternate;
+}
+
+.hero-aurora .orb-a {
+  width: 55vw;
+  max-width: 520px;
+  height: 55vw;
+  max-height: 520px;
+  top: -15%;
+  left: -8%;
+  background: radial-gradient(circle, rgba(232, 83, 58, 0.45) 0%, transparent 70%);
+}
+
+.hero-aurora .orb-b {
+  width: 45vw;
+  max-width: 420px;
+  height: 45vw;
+  max-height: 420px;
+  top: 10%;
+  right: -5%;
+  background: radial-gradient(circle, rgba(251, 191, 36, 0.35) 0%, transparent 70%);
+  animation-delay: -6s;
+  animation-duration: 22s;
+}
+
+.hero-aurora .orb-c {
+  width: 40vw;
+  max-width: 380px;
+  height: 40vw;
+  max-height: 380px;
+  bottom: 0;
+  left: 30%;
+  background: radial-gradient(circle, rgba(120, 113, 108, 0.25) 0%, transparent 70%);
+  animation-delay: -12s;
+  animation-duration: 20s;
+}
+
+@keyframes orb-float {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(4%, 6%) scale(1.08); }
+}
+
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.hero-bg {
+  opacity: 0.35;
+}
+
+.hero h1 em {
+  background: linear-gradient(120deg, var(--accent) 0%, #c2410c 45%, var(--ink) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  animation: badge-in 0.8s var(--ease-out-expo) both;
+}
+
+.hero-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16a34a;
+  box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5);
+  animation: pulse-ring 2s ease infinite;
+}
+
+@keyframes badge-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+}
+
+/* ── Glass nav (scroll) ── */
+.nav {
+  background: transparent;
+  border-bottom-color: transparent;
+  transition: background 0.35s var(--ease-out-expo), border-color 0.35s, box-shadow 0.35s, padding 0.35s;
+}
+
+.nav.is-scrolled {
+  background: var(--glass);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border-bottom-color: var(--border);
+  box-shadow: 0 4px 24px rgba(28, 25, 23, 0.06);
+}
+
+.logo {
+  position: relative;
+}
+
+.logo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s var(--ease-out-expo);
+}
+
+.nav.is-scrolled .logo:hover::after,
+.logo:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Buttons: Skiper / React Bits hover lift ── */
+.btn-primary,
+.btn-search,
+.nav-cta {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.25s, background 0.2s;
+}
+
+.btn-primary::before,
+.btn-search::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.25) 50%, transparent 60%);
+  transform: translateX(-120%);
+  transition: transform 0.6s var(--ease-out-expo);
+}
+
+.btn-primary:hover::before,
+.btn-search:hover::before {
+  transform: translateX(120%);
+}
+
+.btn-primary:hover,
+.btn-search:hover,
+.nav-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px var(--glow);
+}
+
+.btn-ghost {
+  transition: transform 0.25s var(--ease-spring), border-color 0.2s, box-shadow 0.25s;
+}
+
+.btn-ghost:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Feed header: centered search block ── */
+.feed-header {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+}
+
+.feed-header h2 {
+  font-size: clamp(28px, 4vw, 40px);
+}
+
+.feed-header > p {
+  max-width: 520px;
+}
+
+/* ── Search: animated gradient border ── */
+.search-panel {
+  position: relative;
+  padding: 3px;
+  border-radius: calc(var(--radius-pill) + 4px);
+  background: linear-gradient(
+    120deg,
+    var(--border),
+    var(--accent),
+    #fbbf24,
+    var(--border)
+  );
+  background-size: 300% 300%;
+  animation: border-flow 8s ease infinite;
+  max-width: 680px;
+}
+
+@keyframes border-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.search-panel-inner {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  width: 100%;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+}
+
+.search-panel .search-input,
+.search-panel .btn-search,
+.search-panel .btn-expand-search {
+  border-radius: var(--radius-pill);
+}
+
+.search-panel .search-input {
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+/* ── Scroll reveal ── */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.7s var(--ease-out-expo),
+    transform 0.7s var(--ease-out-expo);
+}
+
+[data-reveal].is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-reveal-delay="1"] { transition-delay: 0.08s; }
+[data-reveal-delay="2"] { transition-delay: 0.16s; }
+[data-reveal-delay="3"] { transition-delay: 0.24s; }
+
+/* ── Metric counters ── */
+.metric {
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s var(--ease-spring), box-shadow 0.35s;
+}
+
+.metric::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), #fbbf24);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s var(--ease-out-expo);
+}
+
+.metric.is-visible::before {
+  transform: scaleX(1);
+}
+
+.metric:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.metric-value.counting {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Capability cards: tilt hover ── */
+.cap-card {
+  transition: transform 0.4s var(--ease-out-expo), box-shadow 0.4s;
+  transform-style: preserve-3d;
+}
+
+.cap-card:hover {
+  transform: translateY(-6px) rotateX(2deg);
+  box-shadow: 0 20px 40px rgba(28, 25, 23, 0.1);
+}
+
+.cap-card .cap-icon {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  font-size: 20px;
+  margin-bottom: 14px;
+}
+
+/* ── Campaign cards: image zoom + gradient edge ── */
+.signal-card {
+  position: relative;
+  border: 1px solid var(--border);
+}
+
+.signal-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, transparent, rgba(232, 83, 58, 0.4), transparent);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.35s;
+  pointer-events: none;
+}
+
+.signal-card:hover::after {
+  opacity: 1;
+}
+
+.signal-media img {
+  transition: transform 0.6s var(--ease-out-expo);
+}
+
+.signal-card:hover .signal-media img {
+  transform: scale(1.06);
+}
+
+.signal-media {
+  overflow: hidden;
+}
+
+/* Stagger children in feed */
+.feed .signal-card[data-reveal] {
+  transition-delay: calc(var(--stagger, 0) * 0.06s);
+}
+
+/* ── Marquee fade masks (Godly-style) ── */
+.marquee-section {
+  position: relative;
+}
+
+.marquee-section::before,
+.marquee-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.marquee-section::before {
+  left: 0;
+  background: linear-gradient(90deg, var(--bg) 0%, transparent 100%);
+}
+
+.marquee-section::after {
+  right: 0;
+  background: linear-gradient(270deg, var(--bg) 0%, transparent 100%);
+}
+
+/* ── Wallet band glow ── */
+.wallet-band {
+  position: relative;
+  background: linear-gradient(135deg, var(--surface) 0%, #fff9f7 100%);
+  box-shadow: 0 0 0 1px var(--border), 0 24px 48px rgba(232, 83, 58, 0.08);
+}
+
+.wallet-band::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(232, 83, 58, 0.3), transparent 50%, rgba(251, 191, 36, 0.2));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── CTA band mesh ── */
+.cta-band {
+  position: relative;
+  overflow: hidden;
+}
+
+.cta-band::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 100%, rgba(232, 83, 58, 0.25), transparent),
+    radial-gradient(ellipse 60% 50% at 90% 0%, rgba(251, 191, 36, 0.15), transparent);
+  pointer-events: none;
+}
+
+.cta-band h2,
+.cta-band p,
+.cta-band .btn-primary {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── FAQ accordion feel ── */
+.faq-item {
+  transition: background 0.2s;
+  border-radius: var(--radius);
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.faq-item:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Skeleton: React Bits shimmer ── */
+@keyframes shimmer-slide {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-media,
+.skeleton-line {
+  background: linear-gradient(
+    90deg,
+    var(--border-soft) 0%,
+    #fff 50%,
+    var(--border-soft) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-slide 1.8s ease-in-out infinite;
+}
+
+/* ── Footer links ── */
+.footer a {
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.footer a:hover {
+  opacity: 1 !important;
+  color: #fff !important;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  .hero-aurora .orb,
+  .search-panel,
+  .hero-badge,
+  .hero-badge-dot,
+  .live-dot,
+  .marquee-track {
+    animation: none !important;
+  }
+
+  [data-reveal] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .btn-primary:hover,
+  .btn-search:hover,
+  .btn-ghost:hover,
+  .metric:hover,
+  .cap-card:hover,
+  .signal-card:hover {
+    transform: none;
+  }
+
+  .signal-card:hover .signal-media img {
+    transform: none;
+  }
+}
