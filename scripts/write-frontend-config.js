@@ -7,8 +7,10 @@ const fs = require("fs");
 const path = require("path");
 
 const apiUrl = process.env.GIVEFUND_API_URL || "http://localhost:8000";
+// In production, always use the canonical domain — never a preview URL.
 const frontendUrl =
   process.env.GIVEFUND_FRONTEND_URL ||
+  (process.env.VERCEL_ENV === "production" ? "https://givefund.vercel.app" : "") ||
   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
   process.env.URL ||
   "";

@@ -46,6 +46,11 @@
       border-radius: 8px;
       margin-bottom: 12px;
     }
+    input[readonly] {
+      background: #f3f2f0;
+      color: var(--muted);
+      cursor: not-allowed;
+    }
     .note { font-size: 14px; color: var(--muted); margin: 12px 0; }
     .cta {
       display: block;
@@ -62,6 +67,21 @@
       margin-top: 8px;
     }
     .cta:disabled { opacity: 0.5; cursor: not-allowed; }
+    .cta-danger {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 11px;
+      background: transparent;
+      color: #991b1b;
+      font-weight: 600;
+      border-radius: 999px;
+      border: 1.5px solid #fca5a5;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .cta-danger:hover { background: #fee2e2; }
     .divider {
       text-align: center;
       color: var(--muted);
@@ -94,6 +114,7 @@
       <p><strong id="profileName"></strong></p>
       <p class="note" id="profileEmail"></p>
       <p id="savedBadge" class="status ok hidden">Card saved — Stripe Link may autofill on supported sites.</p>
+      <button class="cta-danger" id="deleteBtn">Delete my wallet data</button>
     </div>
 
     <div class="card">
@@ -109,9 +130,9 @@
         <p class="note">Step 2 — save card (Stripe, no charge)</p>
         <label for="donorName">Name (for checkout prefill)</label>
         <input id="donorName" type="text" placeholder="Your name" autocomplete="name">
-        <label for="donorEmail">Email (must match Stripe Link)</label>
-        <input id="donorEmail" type="email" required placeholder="you@example.com" autocomplete="email">
-        <button type="submit" class="cta" id="saveBtn">Save card securely</button>
+        <label for="donorEmail">Email (verified by Google)</label>
+        <input id="donorEmail" type="email" required placeholder="Sign in with Google first" autocomplete="off" readonly>
+        <button type="submit" class="cta" id="saveBtn" disabled>Save card securely</button>
       </form>
       <p id="stripeOff" class="note hidden">Card save is off until <code>STRIPE_SECRET_KEY</code> is set on the API.</p>
       <p id="status" class="status hidden" role="status"></p>
@@ -121,24 +142,40 @@
     const API = window.GIVEFUND_API_URL || "http://localhost:8000";
     const $ = (s) => document.querySelector(s);
 
+    const TOKEN_KEY = "givefund_wallet_token";
+    let sessionToken = sessionStorage.getItem(TOKEN_KEY) || null;
     let config = { enabled: false, google_oauth_enabled: false, google_client_id: null };
+
+    function authHeaders() {
+      return sessionToken
+        ? { "Content-Type": "application/json", "Authorization": `Bearer ${sessionToken}` }
+        : { "Content-Type": "application/json" };
+    }
 
     function showProfile(profile) {
       if (!profile || !profile.email) return;
-      localStorage.setItem("givefund_donor_email", profile.email);
-      if (profile.display_name) localStorage.setItem("givefund_donor_name", profile.display_name);
       $("#profileCard").classList.remove("hidden");
       $("#profileEmail").textContent = profile.email;
       $("#profileName").textContent = profile.display_name || profile.email;
       if (profile.has_saved_card) $("#savedBadge").classList.remove("hidden");
+      // Lock email to Google-verified value
       $("#donorEmail").value = profile.email;
       if (profile.display_name) $("#donorName").value = profile.display_name;
+      // Unlock save button only if stripe is available and user is signed in
+      if (config.enabled) $("#saveBtn").disabled = false;
     }
 
-    async function loadProfile(email) {
-      if (!email) return;
+    async function loadProfile() {
+      if (!sessionToken) return;
       try {
-        const res = await fetch(`${API}/wallet/profile?email=${encodeURIComponent(email)}`);
+        const res = await fetch(`${API}/wallet/profile`, {
+          headers: { "Authorization": `Bearer ${sessionToken}` },
+        });
+        if (res.status === 401) {
+          sessionStorage.removeItem(TOKEN_KEY);
+          sessionToken = null;
+          return;
+        }
         if (res.ok) showProfile(await res.json());
       } catch { /* ignore */ }
     }
@@ -160,6 +197,9 @@
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.detail || "Google sign-in failed");
+          // Store session token
+          sessionToken = data.session_token;
+          sessionStorage.setItem(TOKEN_KEY, sessionToken);
           showProfile(data.profile);
           $("#status").className = "status ok";
           $("#status").textContent = "Signed in with Google.";
@@ -182,11 +222,6 @@
     }
 
     async function init() {
-      const savedEmail = localStorage.getItem("givefund_donor_email");
-      const savedName = localStorage.getItem("givefund_donor_name");
-      if (savedEmail) $("#donorEmail").value = savedEmail;
-      if (savedName) $("#donorName").value = savedName;
-
       try {
         const res = await fetch(`${API}/wallet/config`);
         config = res.ok ? await res.json() : { enabled: false };
@@ -196,10 +231,10 @@
 
       if (!config.enabled) {
         $("#stripeOff").classList.remove("hidden");
-        $("#saveBtn").disabled = true;
       }
 
-      await loadProfile(savedEmail);
+      await loadProfile();
+
       if (window.google && google.accounts) {
         initGoogle();
       } else {
@@ -208,33 +243,47 @@
         });
       }
 
+      // Save card form — requires session token
       $("#walletForm").addEventListener("submit", async (e) => {
         e.preventDefault();
-        if (!config.enabled) return;
-        const email = $("#donorEmail").value.trim();
+        if (!config.enabled || !sessionToken) return;
         const display_name = $("#donorName").value.trim() || null;
-        localStorage.setItem("givefund_donor_email", email);
-        if (display_name) localStorage.setItem("givefund_donor_name", display_name);
         $("#status").className = "status";
         $("#status").textContent = "Redirecting to Stripe…";
         $("#status").classList.remove("hidden");
         try {
           const res = await fetch(`${API}/wallet/setup`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email,
-              display_name,
-              success_url: `${window.location.origin}/wallet-success.html`,
-              cancel_url: `${window.location.origin}/wallet.html`,
-            }),
+            headers: authHeaders(),
+            body: JSON.stringify({ display_name }),
           });
           const data = await res.json();
+          if (res.status === 401) { sessionStorage.removeItem(TOKEN_KEY); sessionToken = null; throw new Error("Session expired — please sign in again."); }
           if (!res.ok) throw new Error(data.detail || "Setup failed");
+          // Persist token for the success page redirect
+          sessionStorage.setItem(TOKEN_KEY, sessionToken);
           window.location.href = data.url;
         } catch (err) {
           $("#status").className = "status err";
           $("#status").textContent = err.message || "Could not start card setup.";
+        }
+      });
+
+      // Delete wallet data
+      $("#deleteBtn").addEventListener("click", async () => {
+        if (!sessionToken) return;
+        if (!confirm("Delete your saved wallet data? This cannot be undone.")) return;
+        try {
+          const res = await fetch(`${API}/wallet/profile`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${sessionToken}` },
+          });
+          if (!res.ok) throw new Error("Delete failed");
+          sessionStorage.removeItem(TOKEN_KEY);
+          sessionToken = null;
+          location.reload();
+        } catch (e) {
+          alert(e.message || "Could not delete wallet data.");
         }
       });
     }

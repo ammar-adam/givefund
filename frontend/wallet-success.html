@@ -26,14 +26,16 @@
   <p id="loading">Confirming with Stripe…</p>
   <div id="done" class="hidden">
     <p class="ok">Your payment method is saved. Use the <strong>same email</strong> when you give — Stripe Link may autofill on supported checkouts.</p>
-    <p>GiveFund still sends you to each campaign’s own platform. We never charge or hold campaign donations.</p>
+    <p>GiveFund still sends you to each campaign's own platform. We never charge or hold campaign donations.</p>
     <p><a href="index.html#campaigns">Back to campaigns</a> · <a href="wallet.html">Wallet settings</a></p>
   </div>
   <p id="err" class="err hidden"></p>
   <script>
     const API = window.GIVEFUND_API_URL || "http://localhost:8000";
+    const TOKEN_KEY = "givefund_wallet_token";
     const params = new URLSearchParams(location.search);
     const sessionId = params.get("session_id");
+    const sessionToken = sessionStorage.getItem(TOKEN_KEY);
 
     async function complete() {
       if (!sessionId) {
@@ -41,16 +43,24 @@
         document.getElementById("done").classList.remove("hidden");
         return;
       }
+      if (!sessionToken) {
+        document.getElementById("loading").classList.add("hidden");
+        const err = document.getElementById("err");
+        err.textContent = "Session expired. Please return to the wallet page and sign in again.";
+        err.classList.remove("hidden");
+        return;
+      }
       try {
         const res = await fetch(`${API}/wallet/complete`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${sessionToken}`,
+          },
           body: JSON.stringify({ session_id: sessionId }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || "Could not confirm card save");
-        localStorage.setItem("givefund_donor_email", data.email);
-        if (data.display_name) localStorage.setItem("givefund_donor_name", data.display_name);
         document.getElementById("loading").classList.add("hidden");
         document.getElementById("done").classList.remove("hidden");
       } catch (e) {

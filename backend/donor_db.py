@@ -109,3 +109,19 @@ async def profile_response(email: str) -> dict[str, Any]:
         "wallet_saved_at": row.get("wallet_saved_at"),
         "link_ready": bool(row.get("wallet_saved_at")),
     }
+
+
+async def delete_profile(email: str) -> bool:
+    """Delete a donor profile by email. Returns True if a row was deleted."""
+    email = email.strip().lower()
+    conn = await _writable_connection()
+    try:
+        await ensure_donor_table(conn)
+        cur = await conn.execute(
+            "DELETE FROM donor_profiles WHERE email = ?",
+            (email,),
+        )
+        await conn.commit()
+        return cur.rowcount > 0
+    finally:
+        await conn.close()

@@ -5,9 +5,10 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -29,6 +30,7 @@ from models import (
     WalletCompleteRequest,
     WalletCompleteResponse,
     WalletConfigResponse,
+    WalletDeleteResponse,
     WalletSetupRequest,
     WalletSetupResponse,
     PlatformInfo,
@@ -47,12 +49,19 @@ import donor_db
 import google_oauth
 import stripe_wallet
 from deep_links import checkout_assist
+from wallet_auth import create_session_token, require_wallet_session
+from rate_limit import RateLimitMiddleware
 
 
 load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _frontend_base_url() -> str:
+    return os.getenv("GIVEFUND_FRONTEND_URL", "http://127.0.0.1:5500").rstrip("/")
+
 
 def _sync_database_from_url() -> None:
     """Download givefund.db when DB_DOWNLOAD_URL is configured."""
@@ -72,7 +81,7 @@ app = FastAPI(title="GiveFund API", lifespan=lifespan)
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Log method, path, status code, and duration for every request."""
+    """Log method, path, status code, and duration. Never logs tokens or emails."""
 
     async def dispatch(self, request: Request, call_next):
         start = time.perf_counter()
@@ -88,13 +97,22 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# Middleware order matters: outermost runs first on request, last on response
 app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(RateLimitMiddleware)
+
+_ALLOWED_ORIGINS = [
+    _frontend_base_url(),
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -103,7 +121,6 @@ async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
     """Return clear 422 messages for invalid query parameters."""
-
     errors = exc.errors()
     detail = "; ".join(
         f"{'.'.join(str(loc) for loc in err['loc'])}: {err['msg']}" for err in errors
@@ -133,6 +150,10 @@ def _campaign_from_row_dict(row: dict, row_id: int) -> Campaign:
         scraped_at=row.get("scraped_at"),
     )
 
+
+# ---------------------------------------------------------------------------
+# Search endpoints
+# ---------------------------------------------------------------------------
 
 @app.get("/search/fast", response_model=LiveSearchResponse)
 async def search_fast(
@@ -190,10 +211,7 @@ async def search_live(
     merge_db: bool = Query(default=True),
     platform: str | None = Query(default=None, max_length=40),
 ) -> LiveSearchResponse:
-    """
-    On-demand cross-platform search: scrapes all wired platforms for this query.
-    Called when a user searches — results are persisted by default for Give Now ids.
-    """
+    """On-demand cross-platform search."""
     platforms = [platform] if platform else None
     cached = get_cached(q, platform=platform)
     if cached:
@@ -280,13 +298,10 @@ async def search_live_stream(
     persist: bool = Query(default=True),
     platform: str | None = Query(default=None, max_length=40),
 ) -> StreamingResponse:
-    """
-    Server-Sent Events: campaigns arrive per platform as they finish (often < 10s to first batch).
-    """
+    """Server-Sent Events: campaigns arrive per platform as they finish."""
     platforms = [platform] if platform else None
 
     async def event_generator():
-        merged_cache: dict[str, Any] = {"campaigns": [], "by_platform": {}}
         async for chunk in stream_live_search_events(
             q, limit=limit, platforms=platforms, persist=persist
         ):
@@ -294,14 +309,8 @@ async def search_live_stream(
             if chunk.startswith("data: "):
                 try:
                     import json as _json
-
                     payload = _json.loads(chunk[6:].strip())
-                    if payload.get("type") == "platform":
-                        merged_cache["campaigns"].extend(payload.get("campaigns") or [])
-                        merged_cache["by_platform"][payload["platform"]] = payload.get(
-                            "count", 0
-                        )
-                    elif payload.get("type") == "done":
+                    if payload.get("type") == "done":
                         set_cached(q, payload, platform=platform)
                 except Exception:
                     pass
@@ -317,6 +326,10 @@ async def search_live_stream(
     )
 
 
+# ---------------------------------------------------------------------------
+# Campaign endpoints
+# ---------------------------------------------------------------------------
+
 @app.get("/campaigns", response_model=CampaignsResponse)
 async def list_campaigns(
     search: str | None = Query(default=None),
@@ -326,8 +339,6 @@ async def list_campaigns(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=48, ge=1, le=100),
 ) -> CampaignsResponse:
-    """Return campaigns filtered by search, category, platform, sort, and pagination."""
-
     try:
         campaigns, total, pages = await db.get_campaigns(
             search=search,
@@ -345,14 +356,11 @@ async def list_campaigns(
 
 @app.get("/campaigns/{campaign_id}", response_model=Campaign)
 async def get_campaign(campaign_id: int) -> Campaign:
-    """Return one campaign by id."""
-
     try:
         campaign = await db.get_campaign(campaign_id)
     except Exception as exc:
         logger.exception("Failed to fetch campaign id=%s", campaign_id)
         raise HTTPException(status_code=500, detail="Failed to fetch campaign") from exc
-
     if campaign is None:
         raise HTTPException(status_code=404, detail="Campaign not found")
     return campaign
@@ -363,10 +371,7 @@ async def campaign_checkout(
     campaign_id: int,
     email: str | None = Query(default=None, max_length=320),
 ) -> CheckoutAssistResponse:
-    """
-    Express Give: lowest-friction donate URL for this campaign.
-    Optional email prefill where platforms allow it; Link hint when likely.
-    """
+    """Express Give: lowest-friction donate URL for this campaign."""
     campaign = await db.get_campaign(campaign_id)
     if campaign is None:
         raise HTTPException(status_code=404, detail="Campaign not found")
@@ -390,32 +395,28 @@ async def campaign_checkout(
     return CheckoutAssistResponse(**data)
 
 
+# ---------------------------------------------------------------------------
+# Category / Platform / Stats endpoints
+# ---------------------------------------------------------------------------
+
 @app.get("/categories", response_model=CategoriesResponse)
 async def list_categories() -> CategoriesResponse:
-    """Return distinct categories present in the campaign database."""
-
     try:
         return CategoriesResponse(categories=await db.get_categories())
     except Exception as exc:
-        logger.exception("Failed to list categories")
         raise HTTPException(status_code=500, detail="Failed to list categories") from exc
 
 
 @app.get("/platforms", response_model=PlatformsResponse)
 async def list_platforms() -> PlatformsResponse:
-    """Return distinct platforms present in the campaign database."""
-
     try:
         return PlatformsResponse(platforms=await db.get_platforms())
     except Exception as exc:
-        logger.exception("Failed to list platforms")
         raise HTTPException(status_code=500, detail="Failed to list platforms") from exc
 
 
 @app.get("/platforms/catalog", response_model=PlatformCatalogResponse)
 async def platform_catalog() -> PlatformCatalogResponse:
-    """Return every platform GiveFund supports (independent of DB rows)."""
-
     return PlatformCatalogResponse(
         platforms=[PlatformInfo(**entry) for entry in PLATFORM_CATALOG],
         count=SUPPORTED_PLATFORM_COUNT,
@@ -424,35 +425,29 @@ async def platform_catalog() -> PlatformCatalogResponse:
 
 @app.get("/ingest/status", response_model=IngestStatusResponse)
 async def ingest_status() -> IngestStatusResponse:
-    """Live scrape pipeline status — when data was last refreshed."""
-
     try:
         data = await db.get_ingest_status()
         return IngestStatusResponse(**data)
     except Exception as exc:
-        logger.exception("Failed to read ingest status")
         raise HTTPException(status_code=500, detail="Failed to read ingest status") from exc
 
 
 @app.get("/stats", response_model=StatsResponse)
 async def stats() -> StatsResponse:
-    """Return aggregate campaign statistics."""
-
     try:
         data = await db.get_stats()
         return StatsResponse(**data)
     except Exception as exc:
-        logger.exception("Failed to read stats")
         raise HTTPException(status_code=500, detail="Failed to read stats") from exc
 
 
-def _frontend_base_url() -> str:
-    return os.getenv("GIVEFUND_FRONTEND_URL", "http://127.0.0.1:5500").rstrip("/")
-
+# ---------------------------------------------------------------------------
+# Wallet endpoints (auth-gated)
+# ---------------------------------------------------------------------------
 
 @app.get("/wallet/config", response_model=WalletConfigResponse)
 async def wallet_config() -> WalletConfigResponse:
-    """Stripe setup-mode availability (save card, no charge) + Google OAuth."""
+    """Stripe setup-mode availability + Google OAuth config."""
     client_id = os.getenv("GOOGLE_CLIENT_ID", "").strip() or None
     return WalletConfigResponse(
         enabled=stripe_wallet.is_configured(),
@@ -464,15 +459,16 @@ async def wallet_config() -> WalletConfigResponse:
 
 @app.get("/wallet/profile", response_model=DonorProfileResponse)
 async def wallet_profile(
-    email: str = Query(min_length=3, max_length=320),
+    session: dict = Depends(require_wallet_session),
 ) -> DonorProfileResponse:
-    """Return saved donor profile for checkout prefill."""
+    """Return saved donor profile -- requires valid session token."""
+    email = session["email"]
     return DonorProfileResponse(**await donor_db.profile_response(email))
 
 
 @app.post("/wallet/oauth/google", response_model=GoogleAuthResponse)
 async def wallet_google_oauth(body: GoogleAuthRequest) -> GoogleAuthResponse:
-    """Verify Google Sign-In and store donor identity."""
+    """Verify Google Sign-In, create session token, store donor identity."""
     if not google_oauth.is_configured():
         raise HTTPException(
             status_code=503,
@@ -494,31 +490,54 @@ async def wallet_google_oauth(body: GoogleAuthRequest) -> GoogleAuthResponse:
         google_sub=identity.get("google_sub") or None,
     )
     profile = await donor_db.profile_response(identity["email"])
+
+    # Issue session token -- requires WALLET_SESSION_SECRET
+    try:
+        token = create_session_token(
+            email=identity["email"],
+            google_sub=identity.get("google_sub") or "",
+        )
+    except RuntimeError:
+        # WALLET_SESSION_SECRET not set -- return profile without token (degraded)
+        token = ""
+
     return GoogleAuthResponse(
         email=identity["email"],
         display_name=identity.get("display_name") or None,
         profile=DonorProfileResponse(**profile),
+        session_token=token,
     )
 
 
 @app.post("/wallet/setup", response_model=WalletSetupResponse)
-async def wallet_setup(body: WalletSetupRequest) -> WalletSetupResponse:
-    """Save payment method via Stripe Checkout (setup mode). No charge to the donor."""
+async def wallet_setup(
+    body: WalletSetupRequest,
+    session: dict = Depends(require_wallet_session),
+) -> WalletSetupResponse:
+    """Save payment method via Stripe Checkout (setup mode). No charge."""
     if not stripe_wallet.is_configured():
         raise HTTPException(
             status_code=503,
             detail="Card save is not configured. Set STRIPE_SECRET_KEY on the API.",
         )
+
+    # Email always comes from the verified session token
+    email = session["email"]
+
+    # Server builds redirect URLs -- client-supplied values are ignored
     base = _frontend_base_url()
+    success_url = f"{base}/wallet-success.html"
+    cancel_url = f"{base}/wallet.html"
+
     try:
         result = stripe_wallet.create_setup_session(
-            email=body.email,
+            email=email,
             display_name=body.display_name,
-            success_url=body.success_url or f"{base}/wallet-success.html",
-            cancel_url=body.cancel_url or f"{base}/wallet.html",
+            success_url=success_url,
+            cancel_url=cancel_url,
         )
         await donor_db.upsert_profile(
-            email=body.email,
+            email=email,
             display_name=body.display_name,
             stripe_customer_id=result.get("stripe_customer_id"),
         )
@@ -529,7 +548,10 @@ async def wallet_setup(body: WalletSetupRequest) -> WalletSetupResponse:
 
 
 @app.post("/wallet/complete", response_model=WalletCompleteResponse)
-async def wallet_complete(body: WalletCompleteRequest) -> WalletCompleteResponse:
+async def wallet_complete(
+    body: WalletCompleteRequest,
+    session: dict = Depends(require_wallet_session),
+) -> WalletCompleteResponse:
     """Finalize card save after Stripe redirect."""
     if not stripe_wallet.is_configured():
         raise HTTPException(status_code=503, detail="Stripe is not configured")
@@ -541,6 +563,13 @@ async def wallet_complete(body: WalletCompleteRequest) -> WalletCompleteResponse
     except Exception as exc:
         logger.exception("wallet complete failed")
         raise HTTPException(status_code=502, detail="Could not verify card setup") from exc
+
+    # Verify Stripe session email matches token email
+    if done["email"] != session["email"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Stripe session email does not match authenticated session.",
+        )
 
     await donor_db.upsert_profile(
         email=done["email"],
@@ -557,24 +586,36 @@ async def wallet_complete(body: WalletCompleteRequest) -> WalletCompleteResponse
     )
 
 
+@app.delete("/wallet/profile", response_model=WalletDeleteResponse)
+async def wallet_delete(
+    session: dict = Depends(require_wallet_session),
+) -> WalletDeleteResponse:
+    """Delete donor profile and optionally remove Stripe customer."""
+    email = session["email"]
+    try:
+        await donor_db.delete_profile(email)
+    except Exception as exc:
+        logger.exception("wallet delete failed")
+        raise HTTPException(status_code=500, detail="Could not delete profile") from exc
+    return WalletDeleteResponse(email=email, deleted=True)
+
+
+# ---------------------------------------------------------------------------
+# Health
+# ---------------------------------------------------------------------------
+
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
-    """Return API health and campaign count."""
-
     try:
         return HealthResponse(status="ok", campaign_count=await db.get_campaign_count())
     except Exception as exc:
-        logger.exception("Failed to read health status")
         raise HTTPException(status_code=500, detail="Failed to read health status") from exc
 
 
 def get_port() -> int:
-    """Return the configured server port."""
-
     return int(os.getenv("PORT", "8000"))
 
 
 if __name__ == "__main__":
     import uvicorn
-
     uvicorn.run("main:app", host="0.0.0.0", port=get_port(), reload=True)

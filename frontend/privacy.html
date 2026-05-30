@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — GiveFund</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #f7f5f2; --ink: #121212; --muted: #5c5c5c; --accent: #c45c4a; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.7; }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+    h1 { font-family: "Instrument Serif", serif; font-weight: 400; font-size: 2.2rem; margin: 0 0 8px; }
+    h2 { font-size: 1.1rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+    p, li { font-size: 15px; color: #333; }
+    ul { padding-left: 1.4em; }
+    .meta { font-size: 13px; color: var(--muted); margin-bottom: 2rem; }
+    a { color: var(--accent); }
+    .back { color: var(--accent); text-decoration: none; font-size: 14px; display: inline-block; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="back" href="index.html">← Back to GiveFund</a>
+    <h1>Privacy Policy</h1>
+    <p class="meta">Last updated: May 2025 &nbsp;·&nbsp; Questions? <a href="mailto:privacy@givefund.app">privacy@givefund.app</a></p>
+
+    <h2>What GiveFund is</h2>
+    <p>GiveFund is a search tool that surfaces crowdfunding campaigns from public platforms. We do not run campaigns, collect donations, or hold any funds.</p>
+
+    <h2>Information we collect</h2>
+    <p>We collect only what is needed to run the optional wallet feature:</p>
+    <ul>
+      <li><strong>Google account email and display name</strong> — when you choose to sign in with Google. We verify your identity via Google's OAuth 2.0 service.</li>
+      <li><strong>Stripe customer ID</strong> — created by Stripe when you save a payment method. GiveFund never sees your full card number; Stripe handles all card data under PCI-DSS.</li>
+      <li><strong>Session tokens</strong> — HMAC-signed, stored in your browser's sessionStorage only (cleared when you close the tab). Never stored server-side.</li>
+    </ul>
+    <p>We do <strong>not</strong> collect browsing history, track which campaigns you view, set third-party tracking cookies, or sell any data.</p>
+
+    <h2>How we use your information</h2>
+    <ul>
+      <li>To prefill your name and email on supported donation checkouts, saving you steps.</li>
+      <li>To associate your Stripe customer record so Stripe Link can autofill payment details.</li>
+    </ul>
+
+    <h2>Data storage and security</h2>
+    <p>Donor profiles (email, Stripe customer ID, display name) are stored in a SQLite database on Render's infrastructure in the United States. The database is not included in public releases — donor data is excluded from the open-source repository.</p>
+    <p>All connections use HTTPS/TLS. The API enforces rate limiting and requires authentication for all wallet operations.</p>
+
+    <h2>Third-party services</h2>
+    <ul>
+      <li><strong>Google Sign-In</strong> — governed by <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>.</li>
+      <li><strong>Stripe</strong> — payment method storage governed by <a href="https://stripe.com/privacy" target="_blank" rel="noopener">Stripe's Privacy Policy</a>.</li>
+      <li><strong>Render</strong> — API hosting.</li>
+      <li><strong>Vercel</strong> — frontend hosting.</li>
+    </ul>
+
+    <h2>Your rights</h2>
+    <p>You can delete all your wallet data at any time from the <a href="wallet.html">Wallet page</a> using the "Delete my wallet data" button. This removes your profile from our database immediately. Your Stripe payment method must be deleted separately via <a href="https://dashboard.stripe.com" target="_blank" rel="noopener">Stripe's dashboard</a>.</p>
+
+    <h2>Children</h2>
+    <p>GiveFund is not directed at children under 13. We do not knowingly collect data from children.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>We will post updates here with a revised date. Continued use after changes constitutes acceptance.</p>
+  </div>
+</body>
+</html>

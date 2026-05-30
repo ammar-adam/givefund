@@ -79,12 +79,13 @@ class WalletConfigResponse(BaseModel):
 
 
 class WalletSetupRequest(BaseModel):
-    """Start Stripe Checkout (setup mode) to save a card — no charge."""
+    """Start Stripe Checkout (setup mode) to save a card — no charge.
 
-    email: str = Field(min_length=3, max_length=320)
+    Email comes from the authenticated session — do not send it in the body.
+    success_url and cancel_url are server-derived; client-supplied values are ignored.
+    """
+
     display_name: str | None = Field(default=None, max_length=120)
-    success_url: str | None = None
-    cancel_url: str | None = None
 
 
 class WalletSetupResponse(BaseModel):
@@ -132,6 +133,7 @@ class GoogleAuthResponse(BaseModel):
 
     email: str
     display_name: str | None = None
+    session_token: str
     profile: DonorProfileResponse
 
 
@@ -202,3 +204,10 @@ class HealthResponse(BaseModel):
 
 
 SortBy = Literal["most_needed", "almost_there", "newest"]
+
+
+class WalletDeleteResponse(BaseModel):
+    """Confirmation that donor profile was deleted."""
+
+    email: str
+    deleted: bool
