@@ -84,12 +84,7 @@
   opacity: 0.35;
 }
 
-.hero h1 em {
-  background: linear-gradient(120deg, var(--accent) 0%, #c2410c 45%, var(--ink) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+/* h1 em gradient overridden in redesign.css for dark hero */
 
 .hero-badge {
   display: inline-flex;

@@ -33,6 +33,7 @@ async function initHero3D() {
   const canvas = document.createElement("canvas");
   canvas.className = "hero-3d-canvas";
   canvas.setAttribute("aria-hidden", "true");
+  hero.classList.add("hero-has-3d");
   hero.appendChild(canvas);
 
   const renderer = new THREE.WebGLRenderer({
@@ -48,7 +49,7 @@ async function initHero3D() {
   camera.position.z = 13;
 
   // Build a noisy spherical shell of points with a gradient color ramp.
-  const COUNT = 2600;
+  const COUNT = 4200;
   const positions = new Float32Array(COUNT * 3);
   const colors = new Float32Array(COUNT * 3);
 
@@ -81,10 +82,10 @@ async function initHero3D() {
   geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 
   const mat = new THREE.PointsMaterial({
-    size: 0.085,
+    size: 0.14,
     vertexColors: true,
     transparent: true,
-    opacity: 0.95,
+    opacity: 1,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true,
@@ -100,9 +101,11 @@ async function initHero3D() {
     color: 0xff7a4a,
     wireframe: true,
     transparent: true,
-    opacity: 0.07,
+    opacity: 0.18,
   });
   group.add(new THREE.Mesh(coreGeo, coreMat));
+  // Sit visual mass on the right (behind search card area)
+  group.position.set(2.8, 0.2, 0);
   scene.add(group);
 
   let targetX = 0;
