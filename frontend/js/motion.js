@@ -14,6 +14,24 @@
     window.addEventListener("scroll", onScroll, { passive: true });
   }
 
+  function initMobileNav() {
+    const nav = document.querySelector(".nav");
+    const toggle = document.getElementById("navToggle");
+    if (!nav || !toggle) return;
+    toggle.addEventListener("click", () => {
+      const open = nav.classList.toggle("nav-open");
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.textContent = open ? "Close" : "Menu";
+    });
+    nav.querySelectorAll(".nav-links a").forEach((link) => {
+      link.addEventListener("click", () => {
+        nav.classList.remove("nav-open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.textContent = "Menu";
+      });
+    });
+  }
+
   function initReveal() {
     const nodes = document.querySelectorAll("[data-reveal]");
     if (!nodes.length) return;
@@ -32,7 +50,7 @@
           }
         });
       },
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.12 }
+      { rootMargin: "0px 0px 0px 0px", threshold: 0.05 }
     );
 
     nodes.forEach((el) => io.observe(el));
@@ -127,8 +145,19 @@
     );
   }
 
+  /** Section wrappers stay visible; only cards animate in */
+  function revealPageSections() {
+    document
+      .querySelectorAll(
+        ".marquee-section, .bento, .discover, .wallet-split, .cta-band, .faq-grid, .hero-search-card"
+      )
+      .forEach((el) => el.classList.add("is-visible"));
+  }
+
   function boot() {
     initNavScroll();
+    initMobileNav();
+    revealPageSections();
     initReveal();
     initMetricCounters();
     initFeedStagger();
