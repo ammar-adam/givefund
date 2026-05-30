@@ -40,7 +40,7 @@ MAX_ALGOLIA_PAGES = int(os.getenv("LIVE_SEARCH_ALGOLIA_PAGES", "2"))
 HTTP_TIMEOUT_SEC = float(os.getenv("LIVE_SEARCH_HTTP_TIMEOUT_SEC", "8"))
 API_TIMEOUT_SEC = float(os.getenv("LIVE_SEARCH_API_TIMEOUT_SEC", "12"))
 PW_TIMEOUT_SEC = float(os.getenv("LIVE_SEARCH_PW_TIMEOUT_SEC", "18"))
-PW_FALLBACK = os.getenv("LIVE_SEARCH_PLAYWRIGHT_FALLBACK", "true").lower() in (
+PW_FALLBACK = os.getenv("LIVE_SEARCH_PLAYWRIGHT_FALLBACK", "false").lower() in (
     "1",
     "true",
     "yes",

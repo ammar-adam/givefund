@@ -11,7 +11,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 SCRAPER_DIR = Path(__file__).resolve().parents[1] / "scraper"
-FAST_HTTP_PLATFORMS = int(os.getenv("FAST_SEARCH_HTTP_PLATFORMS", "20"))
+FAST_HTTP_PLATFORMS = int(os.getenv("FAST_SEARCH_HTTP_PLATFORMS", "0"))
 FAST_HTTP_TIMEOUT = float(os.getenv("FAST_SEARCH_HTTP_TIMEOUT_SEC", "6"))
 
 

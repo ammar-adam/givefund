@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GiveFund — Crowdfunding discovery across every platform</title>
+  <title>GiveFund — Search fundraisers across platforms</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -253,6 +253,23 @@
     }
 
     .search-panel .btn-search:disabled { opacity: 0.6; cursor: wait; }
+
+    .btn-expand-search {
+      padding: 14px 18px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-expand-search:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-expand-search:disabled { opacity: 0.5; cursor: wait; }
+
+    .btn-expand-search.hidden { display: none; }
 
     .results-meta {
       text-align: center;
@@ -970,9 +987,9 @@
     <header class="hero">
       <div class="hero-bg" aria-hidden="true"></div>
       <div class="hero-inner">
-        <h1><em>Find the help</em> someone needs — across every crowdfunding platform.</h1>
+        <h1><em>Find the help</em> someone needs — in one searchable place.</h1>
         <p class="hero-lead">
-          GiveFund turns scattered campaigns into one searchable feed — always free, no accounts, no tips. Discover real people, sort by who needs you most, and give on the platform they chose.
+          Search our indexed fundraisers plus live GoFundMe results. Optional “+ More sites” tries other platforms when they allow it — always free, no middleman fees.
         </p>
         <div class="hero-actions">
           <a class="btn-primary" href="#campaigns">See live campaigns</a>
@@ -989,7 +1006,7 @@
     <section class="capabilities" aria-label="Core capabilities">
       <article class="cap-card">
         <h3>One search</h3>
-        <p>Search tens of thousands of fundraisers from GoFundMe, LaunchGood, and 20+ other sources in one place.</p>
+        <p>Search our index and GoFundMe live; add more sites when you need broader coverage.</p>
       </article>
       <article class="cap-card">
         <h3>Most needed first</h3>
@@ -1023,6 +1040,7 @@
         <div class="search-panel">
           <input id="searchInput" class="search-input" type="search" placeholder="e.g. cancer, Palestine, medical bills…" aria-label="Search campaigns" autocomplete="off">
           <button type="button" class="btn-search" id="searchBtn">Search</button>
+          <button type="button" class="btn-expand-search hidden" id="expandSearchBtn" title="Also query other crowdfunding sites (slower)">+ More sites</button>
         </div>
         <p id="searchStatus" aria-live="polite"></p>
         <div id="searchPlatformProgress" class="platform-progress hidden" aria-label="Search progress by platform"></div>
@@ -1248,26 +1266,23 @@
 
     function renderPlatformProgress() {
       const wrap = $("#searchPlatformProgress");
-      const entries = Object.entries(state.searchPlatformStatus);
+      const entries = Object.entries(state.searchPlatformStatus).filter(
+        ([, st]) => st === "ok"
+      );
       if (!entries.length) {
         wrap.classList.add("hidden");
+        wrap.innerHTML = "";
         return;
       }
-      const done = entries.filter(([, s]) => s === "ok" || s === "empty").length;
       wrap.innerHTML = entries
-        .map(([id, st]) => {
+        .map(([id]) => {
           const label = platformLabel(id);
-          const count =
-            st === "ok" && state.lastByPlatform?.[id] != null
-              ? ` ${state.lastByPlatform[id]}`
-              : "";
-          return `<span class="platform-chip ${st}" title="${escapeHtml(id)}">${escapeHtml(label)}${count}</span>`;
+          const count = state.lastByPlatform?.[id];
+          const suffix = count > 0 ? ` (${count})` : "";
+          return `<span class="platform-chip ok" title="${escapeHtml(id)}">${escapeHtml(label)}${suffix}</span>`;
         })
         .join("");
-      const total = entries.length;
-      if (done < total) {
-        setSearchStatus(`Searching platforms live (${done}/${total})…`, true);
-      }
+      wrap.classList.remove("hidden");
     }
 
     function hidePlatformProgress() {
@@ -1719,10 +1734,9 @@
             initPlatformProgress(data.platforms);
           }
 
-          if (data.type === "platform") {
-            const st = data.count > 0 ? "ok" : "empty";
-            updatePlatformProgress(data.platform, st);
-            if (data.count > 0) byPlatform[data.platform] = data.count;
+          if (data.type === "platform" && data.count > 0) {
+            updatePlatformProgress(data.platform, "ok");
+            byPlatform[data.platform] = data.count;
             mergeCampaignMaps(urlMap, data.campaigns || []);
             applyMergedSearch(urlMap, { ...byPlatform }, "live");
           }
@@ -1731,7 +1745,7 @@
             mergeCampaignMaps(urlMap, data.campaigns || []);
             Object.assign(byPlatform, data.by_platform || {});
             for (const [pid, n] of Object.entries(byPlatform)) {
-              updatePlatformProgress(pid, n > 0 ? "ok" : "empty");
+              if (n > 0) updatePlatformProgress(pid, "ok");
             }
             finalPayload = {
               campaigns: mergeCampaignMaps(urlMap, []),
@@ -1840,6 +1854,55 @@
       renderGrid();
     }
 
+    async function runFastSearchOnly(q, gen, urlMap, byPlatform) {
+      setSearchStatus("Searching index + GoFundMe live…", true);
+      const fast = await fetchFastSearch(q);
+      if (gen !== searchGeneration) return;
+      if (fast?.campaigns?.length) {
+        mergeCampaignMaps(urlMap, fast.campaigns);
+        Object.assign(byPlatform, fast.by_platform || {});
+        for (const [pid, n] of Object.entries(fast.by_platform || {})) {
+          if (n > 0) updatePlatformProgress(pid, "ok");
+        }
+        applyMergedSearch(urlMap, byPlatform, "fast");
+      }
+      const n = urlMap.size;
+      const parts = Object.entries(byPlatform)
+        .filter(([, c]) => c > 0)
+        .map(([p, c]) => `${platformLabel(p)} (${c})`)
+        .join(", ");
+      setSearchStatus(
+        n
+          ? `Found ${n} campaigns${parts ? ` · ${parts}` : ""}`
+          : "No matches in index or GoFundMe — try + More sites or another keyword"
+      );
+      const expandBtn = $("#expandSearchBtn");
+      if (q.length >= 2) {
+        expandBtn.classList.remove("hidden");
+        expandBtn.disabled = false;
+        expandBtn.textContent = "+ More sites";
+      }
+    }
+
+    async function runDeepSearch(q, gen, urlMap, byPlatform) {
+      const expandBtn = $("#expandSearchBtn");
+      expandBtn.disabled = true;
+      expandBtn.textContent = "Searching…";
+      setSearchStatus("Querying other platforms (15–45s)…", true);
+      hidePlatformProgress();
+      const live = await streamLiveSearch(q, gen, urlMap, byPlatform);
+      if (gen !== searchGeneration) return;
+      applyMergedSearch(urlMap, byPlatform, "live");
+      const ok = Object.entries(byPlatform).filter(([, n]) => n > 0);
+      setSearchStatus(
+        urlMap.size
+          ? `Found ${urlMap.size} total · ${ok.length} platforms returned results`
+          : "Other platforms returned no matches for this query"
+      );
+      expandBtn.textContent = "+ More sites";
+      expandBtn.disabled = false;
+    }
+
     async function runSearch() {
       const gen = ++searchGeneration;
       state.search = $("#searchInput").value.trim();
@@ -1848,6 +1911,7 @@
       state.liveSearch = false;
       $("#liveSearchBanner").classList.add("hidden");
       hidePlatformProgress();
+      $("#expandSearchBtn").classList.add("hidden");
       $("#loadMoreBtn").classList.add("hidden");
       const q = state.search;
       const urlMap = new Map();
@@ -1866,53 +1930,7 @@
         renderGrid();
 
         if (q.length >= 2) {
-          try {
-            const targets = await fetch(`${API_URL}/search/targets`);
-            if (targets.ok) {
-              const t = await targets.json();
-              const all = [...(t.api || []), ...(t.http || [])];
-              initPlatformProgress(all);
-            }
-          } catch {
-            /* progress optional */
-          }
-
-          setSearchStatus("Quick search (APIs + top platforms)…", true);
-          const fastPromise = fetchFastSearch(q);
-          const livePromise = streamLiveSearch(q, gen, urlMap, byPlatform);
-
-          const fast = await fastPromise;
-          if (gen !== searchGeneration) return;
-          if (fast?.campaigns?.length) {
-            mergeCampaignMaps(urlMap, fast.campaigns);
-            Object.assign(byPlatform, fast.by_platform || {});
-            for (const [pid, n] of Object.entries(fast.by_platform || {})) {
-              if (n > 0) updatePlatformProgress(pid, "ok");
-            }
-            applyMergedSearch(urlMap, byPlatform, "fast");
-          }
-
-          const live = await livePromise;
-          if (gen !== searchGeneration) return;
-          if (live?.campaigns?.length || urlMap.size) {
-            applyMergedSearch(urlMap, byPlatform, "live");
-            const okCount = Object.values(state.searchPlatformStatus).filter((s) => s === "ok").length;
-            setSearchStatus(
-              live?.cached
-                ? "Cached results (fresh within 5 min)"
-                : `Live search complete · ${urlMap.size} campaigns · ${okCount} platforms matched`
-            );
-          } else if (live?.error === "timeout") {
-            setSearchStatus(
-              urlMap.size
-                ? "Some platforms timed out — showing partial results."
-                : "Search timed out — try a shorter query."
-            );
-          } else if (!urlMap.size) {
-            setSearchStatus("No matches yet — try another keyword or clear filters.");
-          } else {
-            setSearchStatus("");
-          }
+          await runFastSearchOnly(q, gen, urlMap, byPlatform);
         } else {
           setSearchStatus("");
         }
@@ -1982,6 +2000,19 @@
 
     function bindEvents() {
       $("#searchBtn").addEventListener("click", () => runSearch());
+      $("#expandSearchBtn").addEventListener("click", async () => {
+        const q = state.search.trim();
+        if (q.length < 2) return;
+        const gen = searchGeneration;
+        const urlMap = new Map();
+        for (const c of state.campaigns || []) {
+          if (c?.campaign_url) urlMap.set(c.campaign_url, c);
+        }
+        const byPlatform = { ...(state.lastByPlatform || {}) };
+        await runDeepSearch(q, gen, urlMap, byPlatform);
+        updateResultsMeta();
+        renderGrid();
+      });
       $("#searchInput").addEventListener("keydown", (e) => {
         if (e.key === "Enter") {
           e.preventDefault();
